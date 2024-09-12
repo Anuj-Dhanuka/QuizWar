@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "119163959544",
+    "project_id": "quiz-war-e1013",
+    "storage_bucket": "quiz-war-e1013.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:119163959544:android:0f315198752f55dc83a30d",
+        "android_client_info": {
+          "package_name": "com.quizwar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB-E3AYacVOx2NkRHMskQHuBhy_G45uGsE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
