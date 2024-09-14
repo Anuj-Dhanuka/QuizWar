@@ -1,13 +1,11 @@
-import React, {useEffect, useState, useRef, useCallback} from 'react';
+import React, {useEffect, useState, useRef} from 'react';
 import {
   View,
   Text,
-  TextInput,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  TouchableOpacity,
   Image,
 } from 'react-native';
 import auth from '@react-native-firebase/auth';
@@ -177,10 +175,10 @@ const getStyles = currentTheme =>
     },
     title: {
       ...getInterFont('Bold'),
-      fontSize: 24,
+      fontSize: normalize(24),
       fontWeight: 'bold',
       color: '#6a5acd',
-      marginBottom: 20,
+      marginBottom: scaleVertical(20),
     },
     image: {
       alignSelf: 'center',
@@ -190,31 +188,7 @@ const getStyles = currentTheme =>
     subtitle: {
       fontSize: normalize(16),
       color: '#0a1e18',
-      marginBottom: 40,
+      marginBottom: scaleVertical(40),
       ...getInterFont('Medium'),
-    },
-    inputContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderWidth: 1,
-      borderColor: '#ddd',
-      borderRadius: 8,
-      paddingHorizontal: 10,
-      marginBottom: 20,
-    },
-    countryCodeContainer: {
-      flex: 1,
-      borderRightWidth: 1,
-      borderRightColor: '#ddd',
-    },
-    picker: {
-      height: 50,
-      width: 100,
-    },
-    phoneInput: {
-      flex: 3,
-      height: 50,
-      paddingLeft: 10,
-      fontSize: 16,
-    },
+    }
   });
