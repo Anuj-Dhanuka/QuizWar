@@ -21,14 +21,14 @@ import {
 
 // Sample Data
 const popularCategories = [
-  {id: '1', name: 'History', color: '#1E90FF', icon: 'book'},
-  {id: '2', name: 'Mythology', color: '#00CED1', icon: 'globe'},
-  {id: '3', name: 'Nature', color: '#32CD32', icon: 'leaf'},
-  {id: '4', name: 'Travel', color: '#4682B4', icon: 'plane'},
-  {id: '5', name: 'Health', color: '#FF4500', icon: 'heartbeat'},
-  {id: '6', name: 'Mathematics', color: '#6A5ACD', icon: 'calculator'},
-  {id: '7', name: 'Music', color: '#FF69B4', icon: 'music'},
-  {id: '8', name: 'Programming', color: '#9370DB', icon: 'code'},
+  {id: '1', name: 'History', color: '#1E90FF', icon: 'book-open-page-variant'},
+  {id: '2', name: 'Mythology', color: '#00CED1', icon: 'account-group'}, // (Represents groups of gods or mythical beings)
+  {id: '3', name: 'Nature', color: '#32CD32', icon: 'tree'},
+  {id: '4', name: 'Travel', color: '#4682B4', icon: 'airplane'},
+  {id: '5', name: 'Health', color: '#FF4500', icon: 'heart-pulse'},
+  {id: '6', name: 'Mathematics', color: '#6A5ACD', icon: 'math-compass'},
+  {id: '7', name: 'Music', color: '#FF69B4', icon: 'music-note'},
+  {id: '8', name: 'Programming', color: '#9370DB', icon: 'code-tags'},
 ];
 
 const PopularCategories = () => {

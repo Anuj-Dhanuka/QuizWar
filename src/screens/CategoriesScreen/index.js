@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, {useState, useMemo} from 'react';
 import {
   View,
   Text,
@@ -7,31 +7,32 @@ import {
   SafeAreaView,
   TextInput,
   TouchableOpacity,
-  StatusBar
+  StatusBar,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Animatable from 'react-native-animatable';
 
 // dimension utils
-import { normalize, scaleVertical } from '../../utils/DimensionUtils';
+import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 
 // font utils
-import { getInterFont } from '../../utils/FontUtils/interFontHelper';
+import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 
 // local components
 import PopularCategories from './components/PopularCategories';
 import AllCategoriesItem from './components/AllCategoriesItem';
+import BackButton from '../../components/Buttons/BackButton';
 
 const allCategories = [
-  { id: '1', name: 'History', color: '#1E90FF', icon: 'book' },
-  { id: '2', name: 'Mythology', color: '#00CED1', icon: 'globe' },
-  { id: '3', name: 'Nature', color: '#32CD32', icon: 'leaf' },
-  { id: '4', name: 'Travel', color: '#4682B4', icon: 'plane' },
-  { id: '5', name: 'Health', color: '#FF4500', icon: 'heartbeat' },
-  { id: '6', name: 'Mathematics', color: '#6A5ACD', icon: 'calculator' },
-  { id: '7', name: 'Music', color: '#FF69B4', icon: 'music' },
-  { id: '8', name: 'Programming', color: '#9370DB', icon: 'code' },
+  {id: '1', name: 'History', color: '#1E90FF', icon: 'book-open-page-variant'},
+  {id: '2', name: 'Mythology', color: '#00CED1', icon: 'account-group'}, // (Represents groups of gods or mythical beings)
+  {id: '3', name: 'Nature', color: '#32CD32', icon: 'tree'},
+  {id: '4', name: 'Travel', color: '#4682B4', icon: 'airplane'},
+  {id: '5', name: 'Health', color: '#FF4500', icon: 'heart-pulse'},
+  {id: '6', name: 'Mathematics', color: '#6A5ACD', icon: 'math-compass'},
+  {id: '7', name: 'Music', color: '#FF69B4', icon: 'music-note'},
+  {id: '8', name: 'Programming', color: '#9370DB', icon: 'code-tags'},
 ];
 
 const CategoriesScreen = () => {
@@ -39,7 +40,7 @@ const CategoriesScreen = () => {
 
   const filteredCategories = useMemo(() => {
     return allCategories.filter(category =>
-      category.name.toLowerCase().includes(searchQuery.toLowerCase())
+      category.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [searchQuery]);
 
@@ -47,10 +48,18 @@ const CategoriesScreen = () => {
     setSearchQuery('');
   };
 
+  const handleBackButton = () => {
+
+  }
+
   return (
     <SafeAreaView style={styles.flexContainer}>
-      <StatusBar backgroundColor={"#6a11cb"} barStyle={"light-content"}  />
+      <StatusBar backgroundColor={'#6a11cb'} barStyle={'light-content'} />
       <LinearGradient colors={['#6a11cb', '#2575fc']} style={styles.container}>
+        <View style={styles.backButton}>
+          <BackButton onPress={handleBackButton} />
+        </View>
+
         <View style={styles.searchContainer}>
           <Icon name="magnify" size={normalize(20)} color="#666" />
           <TextInput
@@ -62,10 +71,9 @@ const CategoriesScreen = () => {
           />
           {searchQuery.length > 0 && (
             <Animatable.View
-              animation="fadeInRight" 
+              animation="fadeInRight"
               duration={300}
-              style={styles.iconContainer}
-            >
+              style={styles.iconContainer}>
               <TouchableOpacity onPress={clearSearch}>
                 <Icon name="close-circle" size={normalize(20)} color="#666" />
               </TouchableOpacity>
@@ -85,8 +93,8 @@ const CategoriesScreen = () => {
           <FlatList
             data={filteredCategories}
             showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => <AllCategoriesItem item={item} />}
-            keyExtractor={(item) => item.id}
+            renderItem={({item}) => <AllCategoriesItem item={item} />}
+            keyExtractor={item => item.id}
             numColumns={2}
             columnWrapperStyle={styles.columnWrapper}
             contentContainerStyle={styles.allCategoriesList}
@@ -107,6 +115,9 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: normalize(20),
   },
+  backButton: {
+    marginLeft: normalize(12),
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -114,7 +125,7 @@ const styles = StyleSheet.create({
     borderRadius: normalize(30),
     paddingVertical: scaleVertical(10),
     paddingHorizontal: normalize(15),
-    marginTop: scaleVertical(30),
+    marginTop: scaleVertical(16),
   },
   searchInput: {
     flex: 1,

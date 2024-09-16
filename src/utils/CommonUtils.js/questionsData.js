@@ -1,4 +1,4 @@
-export const questionsData1 = [
+export const questionsData = [
     {
         question:
           "Who is the all-time leading goal scorer in FIFA World Cup history?",
