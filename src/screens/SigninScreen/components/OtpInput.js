@@ -2,11 +2,11 @@ import React, {useState} from 'react';
 import {View, Alert, StyleSheet, Text, Pressable} from 'react-native';
 import OtpTextInput from 'react-native-otp-textinput';
 
-//font utils
-import {getInterFont} from '../../../utils/FontUtils/interFontHelper';
-
 //dimension utils
 import {normalize, scaleVertical} from '../../../utils/DimensionUtils';
+
+//font utils
+import {getInterFont} from '../../../utils/FontUtils/interFontHelper';
 
 //components
 import Button from '../../../components/Buttons/Button';

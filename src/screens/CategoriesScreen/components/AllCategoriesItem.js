@@ -5,21 +5,19 @@ import Animated, { useSharedValue, useAnimatedStyle, withTiming, withSpring } fr
 
 //dimension utils
 import { normalize, scaleVertical } from '../../../utils/DimensionUtils';
+
 //font utils
 import { getInterFont } from '../../../utils/FontUtils/interFontHelper';
 
-const AllCategoriesItem = ({ item }) => {
-  // Shared values for animations
+const AllCategoriesItem = ({ item, handleCategoryCardPress }) => {
   const scale = useSharedValue(0.8);
   const opacity = useSharedValue(0);
 
-  // Fade in and scale animation on mount
   useEffect(() => {
     scale.value = withTiming(1, { duration: 500 });
     opacity.value = withTiming(1, { duration: 500 });
   }, []);
 
-  // Animated styles
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ scale: scale.value }],
@@ -27,7 +25,6 @@ const AllCategoriesItem = ({ item }) => {
     };
   });
 
-  // Handle press interaction
   const handlePressIn = () => {
     scale.value = withSpring(0.95, { stiffness: 200 });
   };
@@ -37,7 +34,7 @@ const AllCategoriesItem = ({ item }) => {
   };
 
   const handleOnCategoryPress = () => {
-    console.log(item)
+    handleCategoryCardPress(item)
   }
 
   return (

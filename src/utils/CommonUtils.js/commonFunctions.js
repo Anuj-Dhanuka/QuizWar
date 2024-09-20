@@ -1,6 +1,38 @@
-import { useNavigation, useFocusEffect } from "@react-navigation/native";
-import { useCallback } from "react";
-import { BackHandler } from "react-native";
+import {useNavigation, useFocusEffect} from '@react-navigation/native';
+import {useCallback} from 'react';
+import {BackHandler} from 'react-native';
+import ReactNativeHapticFeedback from 'react-native-haptic-feedback';
+import Sound from 'react-native-sound';
+import Toast from 'react-native-simple-toast';
+
+export const triggerButtonCLickSound = (sound = "buttonclick.mp3") => {
+  var sound = new Sound(sound, Sound.MAIN_BUNDLE, error => {
+    if (error) {
+      Toast.show(`failed to load the sound. ${error}`, Toast.LONG);
+      return;
+    }
+    // loaded successfully
+    //Toast.show('Loaded successfully', Toast.LONG);
+    sound.play(success => {
+      if (success) {
+        //Toast.show('successfully finished playing.', Toast.LONG);
+      } else {
+        Toast.show('playback failed due to audio decoding errors.', Toast.LONG);
+      }
+    });
+  });
+};
+
+export const triggerHapticFeedback = (type = 'impactLight', options = {}) => {
+  const defaultOptions = {
+    enableVibrateFallback: true,
+    ignoreAndroidSystemSettings: false,
+  };
+
+  const mergedOptions = {...defaultOptions, ...options};
+
+  ReactNativeHapticFeedback.trigger(type, mergedOptions);
+};
 
 export const useBackButton = (routeName, params) => {
   const navigation = useNavigation();
@@ -8,20 +40,19 @@ export const useBackButton = (routeName, params) => {
   useFocusEffect(
     useCallback(() => {
       const backHandler = BackHandler.addEventListener(
-        "hardwareBackPress",
+        'hardwareBackPress',
         () => {
-          // Navigate to home screen when back button is pressed
           if (params) {
             navigation.navigate(routeName, params);
           } else {
             navigation.navigate(routeName);
           }
-          return true; // Prevent default behavior (e.g., exit app)
-        }
+          return true;
+        },
       );
 
       return () => backHandler.remove();
-    }, [navigation, routeName, params])
+    }, [navigation, routeName, params]),
   );
 };
 
@@ -33,4 +64,22 @@ export const debounce = (func, delay) => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(() => func.apply(context, args), delay);
   };
+};
+
+
+export const useGameBackButton = (handleBackButton) => {
+  const navigation = useNavigation()
+  useFocusEffect(
+    useCallback(() => {
+      const backHandler = BackHandler.addEventListener(
+        'hardwareBackPress',
+        () => {
+          handleBackButton()
+          return true;
+        },
+      );
+
+      return () => backHandler.remove();
+    }, [navigation]),
+  );
 };

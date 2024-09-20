@@ -7,10 +7,15 @@ import {
   SafeAreaView,
   StatusBar,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 import LinearGradient from 'react-native-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {AnimatedCircularProgress} from 'react-native-circular-progress';
+
+//routes constants
+import Routes from '../../Navigations/RoutesConstants';
 
 // Dimension utils
 import {normalize, scaleVertical} from '../../utils/DimensionUtils';
@@ -18,30 +23,80 @@ import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 //font utils
 import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 
-const ResultScreen = () => {
-  const username = 'Anuj Dhanuka';
-  const score = 7;
-  const totalQuestions = 10;
+//common utils/common function
+import {triggerButtonCLickSound, triggerHapticFeedback} from '../../utils/CommonUtils.js/commonFunctions';
+import {useBackButton} from '../../utils/CommonUtils.js/commonFunctions';
 
-  const percentage = (score / totalQuestions) * 100;
+//common utils/constants
+import {scorePerQuestion} from '../../utils/CommonUtils.js/constants';
 
-  const onRestartQuiz = () => console.log('Restart quiz clicked');
+const ResultScreen = ({navigation}) => {
+  const userGameData = useSelector(state => state.game);
+  console.log(userGameData)
+  const userPerformance = useSelector(state => state.userPerformance);
+  const userData = useSelector(state => state.auth);
 
-  const onShare = () => {
-    console.log("On share clicked")
-  }
+  useBackButton(Routes.CATEGORIES);
+
+  const {isHapticEnabled, isSoundEnabled} = userData;
+  const percentage =
+    (userGameData.correctAnswers /
+      (userGameData.correctAnswers + userGameData.wrongAnswers)) *
+    100;
+
+  useFocusEffect(() => {
+    StatusBar.setBackgroundColor('#6a11cb');
+    StatusBar.setBarStyle('light-content');
+  });
+
+  const onRestartQuiz = () => {
+    if (isHapticEnabled) {
+      triggerHapticFeedback();
+    }
+    if(isSoundEnabled) {
+      triggerButtonCLickSound()
+    }
+    navigation.navigate(Routes.CATEGORIES);
+  };
 
   const onViewDashboard = () => {
-    console.log("Dashboard clicked")
-  }
+    if (isHapticEnabled) {
+      triggerHapticFeedback();
+    }
+    if(isSoundEnabled) {
+      triggerButtonCLickSound()
+    }
+    navigation.navigate(Routes.DASHBOARD);
+  };
+
+  const onGoHome = () => {
+    if (isHapticEnabled) {
+      triggerHapticFeedback();
+    }
+    if(isSoundEnabled) {
+      triggerButtonCLickSound()
+    }
+    navigation.navigate(Routes.HOME);
+  };
+
+  const onShare = () => {
+    if (isHapticEnabled) {
+      triggerHapticFeedback();
+    }
+    if(isSoundEnabled) {
+      triggerButtonCLickSound()
+    }
+    console.log('On share clicked');
+  };
 
   return (
     <SafeAreaView style={styles.flexContainer}>
-      <StatusBar backgroundColor={'#6a11cb'} barStyle={'light-content'} />
       <LinearGradient colors={['#6a11cb', '#2575fc']} style={styles.container}>
         {/* Upper Content - Username, Icon, Text */}
         <View style={styles.upperContainer}>
-          <Text style={styles.usernameText}>Hello, {username}!</Text>
+          <Text style={styles.usernameText}>
+            Hello, {userGameData.username}!
+          </Text>
 
           <Animatable.View
             animation="bounceIn"
@@ -98,7 +153,15 @@ const ResultScreen = () => {
             animation="fadeInUp"
             delay={500}
             style={styles.scoreText}>
-            You scored {score} out of {totalQuestions}
+            You scored {userGameData.score} out of{' '}
+            {(userGameData.wrongAnswers + userGameData.correctAnswers)  * scorePerQuestion}
+          </Animatable.Text>
+
+          <Animatable.Text
+            animation="fadeInUp"
+            delay={600}
+            style={styles.timeText}>
+            Time Taken: {userGameData.timeTaken}s
           </Animatable.Text>
         </View>
 
@@ -143,6 +206,7 @@ const ResultScreen = () => {
               <Text style={styles.shareButtonText}>Share</Text>
             </TouchableOpacity>
           </View>
+
           <TouchableOpacity
             onPress={onViewDashboard}
             style={styles.dashboardLinkContainer}>
@@ -153,6 +217,16 @@ const ResultScreen = () => {
                 color="#2575fc"
               />
               <Text style={styles.dashboardLink}>View Dashboard</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* New Go to Home Button */}
+          <TouchableOpacity
+            onPress={onGoHome}
+            style={styles.goHomeLinkContainer}>
+            <View style={styles.goHomeLinkWrapper}>
+              <Icon name="home-outline" size={normalize(18)} color="#2575fc" />
+              <Text style={styles.goHomeLink}>Go to Home</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -206,8 +280,14 @@ const styles = StyleSheet.create({
     marginTop: scaleVertical(10),
     ...getInterFont('Medium'),
   },
+  timeText: {
+    fontSize: normalize(18),
+    color: '#fff',
+    marginTop: scaleVertical(10),
+    ...getInterFont('Medium'),
+  },
   lowerContainer: {
-    flex: 4,
+    flex: 6,
     justifyContent: 'space-around',
     alignItems: 'center',
     backgroundColor: '#fff',
@@ -288,6 +368,7 @@ const styles = StyleSheet.create({
     ...getInterFont('Bold'),
   },
   dashboardLinkContainer: {
+    marginTop: scaleVertical(16),
     alignItems: 'center',
   },
   dashboardLinkWrapper: {
@@ -295,6 +376,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   dashboardLink: {
+    fontSize: normalize(16),
+    color: '#2575fc',
+    textDecorationLine: 'underline',
+    ...getInterFont('Bold'),
+  },
+  goHomeLinkContainer: {
+    alignItems: 'center',
+  },
+  goHomeLinkWrapper: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  goHomeLink: {
     fontSize: normalize(16),
     color: '#2575fc',
     textDecorationLine: 'underline',

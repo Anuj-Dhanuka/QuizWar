@@ -13,6 +13,9 @@ import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {parsePhoneNumberFromString} from 'libphonenumber-js';
 
+//context
+import {useTheme} from '../../context/ThemeContext';
+
 //dimension utils
 import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 
@@ -22,8 +25,6 @@ import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 //local components
 import Input from './components/Input';
 import OtpInput from './components/OtpInput';
-
-import {useTheme} from '../../context/ThemeContext';
 
 function SigninScreen({navigation}) {
   const {currentTheme} = useTheme();

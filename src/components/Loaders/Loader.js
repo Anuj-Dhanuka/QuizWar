@@ -1,6 +1,6 @@
 import { View, ActivityIndicator } from "react-native";
 
-//importing context to know current theme of app
+//context
 import { useTheme } from "../../context/ThemeContext";
 
 function Loader({ isLoaderActive }) {

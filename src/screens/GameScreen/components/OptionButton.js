@@ -1,11 +1,15 @@
-import React, { useState } from "react";
-import { Pressable, Text, StyleSheet } from "react-native";
+import React from "react";
+import { Text, StyleSheet, Pressable } from "react-native";
+import * as Animatable from "react-native-animatable"; // Import Animatable
 
 //context
 import { useTheme } from "../../../context/ThemeContext";
 
 //dimension utils
 import { normalize, scaleVertical } from "../../../utils/DimensionUtils";
+
+//font utils
+import { getInterFont } from "../../../utils/FontUtils/interFontHelper";
 
 
 const OptionButton = ({
@@ -16,7 +20,6 @@ const OptionButton = ({
   correctOption,
   isDisable
 }) => {
-  
   const { currentTheme } = useTheme();
 
   let hasGreenBorder = false;
@@ -38,26 +41,32 @@ const OptionButton = ({
       btnBackgroundColor = "#EA596E";
     }
   }
-  const [isPressed, setIsPressed] = useState(false);
 
-
-  const handlePress = () => {
-    setIsPressed(!isPressed);
-    answerClickHandler(buttonId);
-  };
+  let animationType = null;
+  if (checkAns.id === buttonId) {
+    animationType = checkAns.ans ? "pulse" : "shake";
+  } else if (buttonId === correctOption) {
+    animationType = "rubberBand";
+  }
 
   return (
-    <Pressable
-      style={[
-        styles.optionButton,
-        { backgroundColor: btnBackgroundColor, borderWidth: btnBorderWidth },
-      ]}
-      onPress={handlePress}
-      id={buttonId}
-      disabled={isDisable}
+    <Animatable.View
+      animation={animationType}
+      duration={800}
+      easing="ease-in-out"
     >
-      <Text style={styles.optionText}>{text}</Text>
-    </Pressable>
+      <Pressable
+        style={[
+          styles.optionButton,
+          { backgroundColor: btnBackgroundColor, borderWidth: btnBorderWidth },
+        ]}
+        onPress={() => answerClickHandler(buttonId)}
+        id={buttonId}
+        disabled={isDisable}
+      >
+        <Text style={styles.optionText}>{text}</Text>
+      </Pressable>
+    </Animatable.View>
   );
 };
 
@@ -78,8 +87,8 @@ const getStyles = (theme, hasGreenBorder) =>
     optionText: {
       fontSize: normalize(20),
       color: "#FFFFFF",
-      fontWeight: "700",
       textAlign: "center",
+      ...getInterFont("Bold")
     },
   });
 

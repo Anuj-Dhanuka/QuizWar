@@ -2,21 +2,25 @@ import React, { useState, useEffect } from "react";
 import { View, StyleSheet, Animated, Image, Dimensions } from "react-native";
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-//Dimensions utils
-import { normalize, scaleVertical } from "../../../utils/DimensionUtils";
-
 //context
 import { useTheme } from "../../../context/ThemeContext";
 
-export default function HealthBar({ currentPoints, reset }) {
-  const [score, setScore] = useState(0);
-  const [animatedWidth] = useState(new Animated.Value(0));
+//Dimensions utils
+import { normalize, scaleVertical } from "../../../utils/DimensionUtils";
 
+
+export default function HealthBar({ currentPoints, reset }) {
   const { currentTheme } = useTheme();
 
   const styles = getStyles(currentTheme);
 
   const { count, addScore } = currentPoints;
+
+  const [score, setScore] = useState(0);
+  const [animatedWidth] = useState(new Animated.Value(0));
+
+
+
   const updateScore = () => {
     if (score + addScore < 95) {
       setScore((prevScore) => prevScore + addScore);

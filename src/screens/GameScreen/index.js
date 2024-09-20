@@ -7,18 +7,37 @@ import {
   StyleSheet,
   StatusBar,
   Animated,
+  Alert,
 } from 'react-native';
 import CircularProgress from 'react-native-circular-progress-indicator';
 import {useDispatch, useSelector} from 'react-redux';
 import moment from 'moment';
+import BackgroundTimer from 'react-native-background-timer';
 
-//Utils
+//context
+import {useTheme} from '../../context/ThemeContext';
+
+//redux
+import {updateGameState} from '../../store/gameSlice';
+
+//dimension Utils
 import {normalize, scaleVertical} from '../../utils/DimensionUtils';
+
+//font utils
+import {getInterFont} from '../../utils/FontUtils/interFontHelper';
+
+//routes constants
+import Routes from '../../Navigations/RoutesConstants';
+
+//common utils
 import {questionsData} from '../../utils/CommonUtils.js/questionsData';
 import {
-  useBackButton,
   debounce,
+  triggerHapticFeedback,
+  triggerButtonCLickSound,
+  useGameBackButton,
 } from '../../utils/CommonUtils.js/commonFunctions';
+import {scorePerQuestion} from '../../utils/CommonUtils.js/constants';
 
 //Local Component
 import HealthBar from './components/Healthbar';
@@ -26,17 +45,23 @@ import QuestionWithOptions from './components/QuestionWithOptions';
 
 //Global Component
 import BackButton from '../../components/Buttons/BackButton';
-
-//context
-import {useTheme} from '../../context/ThemeContext';
-
-//Store
-//import { updateScore, updateTimeTaken } from "../../store/actions";
+import {
+  updateHighestScore,
+  updatePerformanceState,
+} from '../../store/userPerformanceSlice';
 
 const GameScreen = ({navigation}) => {
   const dispatch = useDispatch();
   const {currentTheme} = useTheme();
 
+  const userData = useSelector(state => state.auth);
+  const userPerformance = useSelector(state => state.userPerformance);
+  const activeSessionSData = useSelector(state => state.activeSession);
+
+  const numberOfQuestion = questionsData.length;
+  const {isHapticEnabled, isSoundEnabled} = userData;
+
+  const [summaryCalculated, setSummaryCalculated] = useState(false);
   const [score, setScore] = useState(0);
   const [questionCount, setQuestionCount] = useState(0);
   const [startTime, setStartTime] = useState(null);
@@ -50,10 +75,15 @@ const GameScreen = ({navigation}) => {
     correctAns: null,
   });
 
-  const numberOfQuestion = questionsData.length;
   const animatedXValue = useRef(new Animated.Value(-10)).current;
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const fadeAnimCircularProgress = useRef(new Animated.Value(1)).current;
+  const timeoutRef = useRef(null);
+
+  useFocusEffect(() => {
+    StatusBar.setBackgroundColor('transparent');
+    StatusBar.setBarStyle('light-content');
+  });
 
   useFocusEffect(
     useCallback(() => {
@@ -74,32 +104,114 @@ const GameScreen = ({navigation}) => {
   );
 
   useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  const gameSummaryCalculations = () => {
+    if (!summaryCalculated) {
+      setSummaryCalculated(true);
+    }
+  };
+
+  useEffect(() => {
+    if (summaryCalculated) {
+      const endTime = moment();
+      const duration = moment.duration(endTime.diff(startTime));
+      const totalSeconds = duration.asSeconds() - 1;
+      const minutes = Math.floor(totalSeconds / 60);
+      const seconds = Math.floor(totalSeconds % 60);
+      const formattedTime = `${minutes}.${seconds < 10 ? '0' : ''}${seconds}s`;
+
+      const totalQuestions = questionsData.length;
+      const correctAnswers = score / scorePerQuestion;
+      const wrongAnswers = totalQuestions - correctAnswers;
+
+      const calculatePoints = () => {
+        let basePoints = correctAnswers * scorePerQuestion;
+        let speedBonus = Math.max(0, 10 - totalSeconds);
+        let streakBonus = userPerformance.streak >= 3 ? 10 : 0;
+
+        let finalScore = parseInt(basePoints + speedBonus + streakBonus);
+
+        return finalScore;
+      };
+
+      const pointsEarned = calculatePoints();
+
+      const timeTakenInFloat = parseFloat(formattedTime.replace('s', ''));
+      const leastTimeTakenByUser = userPerformance.leastTimeTakenByUser;
+
+      dispatch(
+        updateGameState({
+          score: score,
+          timeTaken: timeTakenInFloat,
+          correctAnswers: correctAnswers,
+          wrongAnswers: wrongAnswers,
+          createdTime: moment().format('YYYY-MM-DD HH:mm:ss'),
+          userId: userData.userId,
+          username: userData.name,
+          phoneNumber: userData.phoneNumber,
+          userEmail: userData.email,
+          categoryId: activeSessionSData.activeCategoryId,
+          categoryName: activeSessionSData.activeCategoryName,
+          monthlyPoints: userPerformance.monthlyPoints + pointsEarned,
+          totalPoints: userPerformance.totalPoints + pointsEarned,
+        }),
+      );
+
+      dispatch(
+        updatePerformanceState({
+          ...userPerformance,
+          quizzesCompleted: userPerformance.quizzesCompleted + 1,
+          totalPoints: userPerformance.totalPoints + pointsEarned,
+          monthlyPoints: userPerformance.monthlyPoints + pointsEarned,
+          level:
+            1 + parseInt((userPerformance.totalPoints + pointsEarned) / 200),
+        }),
+      );
+
+      if (
+        score === userPerformance.highestScore &&
+        timeTakenInFloat < leastTimeTakenByUser
+      ) {
+        dispatch(
+          updateHighestScore({
+            highestScore: score,
+            leastTimeTakenByUser: timeTakenInFloat,
+          }),
+        );
+      }
+
+      if (score > userPerformance.highestScore) {
+        dispatch(
+          updateHighestScore({
+            highestScore: score,
+            leastTimeTakenByUser: timeTakenInFloat,
+          }),
+        );
+      }
+    }
+  }, [summaryCalculated]);
+
+  useEffect(() => {
     animateScore();
   }, [score]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
+    BackgroundTimer.runBackgroundTimer(() => {
       if (questionCount < questionsData.length - 1) {
         fadeTransition();
       } else {
-        const endTime = moment();
-
-        const duration = moment.duration(endTime.diff(startTime));
-        const totalSeconds = duration.asSeconds() - 1;
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = Math.floor(totalSeconds % 60);
-
-        const formattedTime = `${minutes}.${
-          seconds < 10 ? '0' : ''
-        }${seconds}s`;
-        //dispatch(updateTimeTaken(formattedTime));
-
-        clearInterval(timer);
+        gameSummaryCalculations();
         navigation.navigate('Result');
       }
     }, 10000);
 
-    return () => clearInterval(timer);
+    return () => BackgroundTimer.stopBackgroundTimer();
   }, [questionCount]);
 
   const animateScore = () => {
@@ -124,7 +236,6 @@ const GameScreen = ({navigation}) => {
         useNativeDriver: true,
       }),
     ]).start(() => {
-      // Update question count after fade out completes
       setQuestionCount(prev => prev + 1);
       setProgress(0);
       progressRef.current?.reAnimate();
@@ -147,28 +258,22 @@ const GameScreen = ({navigation}) => {
   const changingQuestion = () => {
     setIsDisabled(false);
     if (questionCount < questionsData.length - 1) {
-      fadeTransition();
+      timeoutRef.current = setTimeout(() => {
+        fadeTransition();
+      }, 1000);
     } else {
-      const timer = setInterval(() => {
-        const endTime = moment();
-
-        const duration = moment.duration(endTime.diff(startTime));
-        const totalSeconds = duration.asSeconds() - 1;
-
-        const minutes = Math.floor(totalSeconds / 60);
-        const seconds = Math.floor(totalSeconds % 60);
-        const formattedTime = `${minutes}.${
-          seconds < 10 ? '0' : ''
-        }${seconds}s`;
-
-        //dispatch(updateTimeTaken(formattedTime));
-        clearInterval(timer);
-        navigation.navigate('Result');
+      timeoutRef.current = setTimeout(() => {
+        gameSummaryCalculations();
+        navigation.navigate(Routes.RESULT);
       }, 1000);
     }
   };
 
   const answerClickHandler = id => {
+    if (isHapticEnabled) {
+      triggerHapticFeedback();
+    }
+    //clearInterval(timer);
     if (isDisabled === false) {
       let updatedScore = score;
       setIsDisabled(true);
@@ -178,33 +283,58 @@ const GameScreen = ({navigation}) => {
       ).toString();
 
       if (correct_option === id) {
+        if (isSoundEnabled) {
+          triggerButtonCLickSound('correctoption.mp3');
+        }
         setCheckAns({id: id, ans: true, correctAns: correct_option});
         setScore(prevScore => {
-          return prevScore + 5;
+          return prevScore + scorePerQuestion;
         });
-        updatedScore = updatedScore + 5;
+        updatedScore = updatedScore + scorePerQuestion;
         setCurrentPoints(prevCount => ({
           count: prevCount.count + 1,
           addScore: 95 / numberOfQuestion,
         }));
-        //dispatch(updateScore(updatedScore));
         changingQuestion();
       } else {
+        if (isSoundEnabled) {
+          triggerButtonCLickSound('wrongoption.mp3');
+        }
         changingQuestion();
         setCheckAns({id: id, ans: false, correctAns: correct_option});
       }
     }
   };
 
-  const debouncedHandleAnswerClick = debounce(answerClickHandler, 300);
-
-  const handleBackButton = () => {
-    navigation.navigate('Categories');
-  };
+  const debouncedHandleAnswerClick = debounce(answerClickHandler, 500);
 
   const progressRef = useRef(null);
   const styles = getStyles(currentTheme);
-  useBackButton('Categories');
+
+  const handleBackButtonClick = () => {
+    Alert.alert(
+      'Exit Game',
+      'Are you sure you want to exit the game? Your progress will be saved.',
+      [
+        {
+          text: 'No',
+          onPress: () => {},
+          style: 'cancel',
+        },
+        {
+          text: 'Yes',
+          onPress: () => {
+            gameSummaryCalculations();
+            navigation.navigate(Routes.RESULT);
+          },
+          style: 'destructive',
+        },
+      ],
+      {cancelable: false},
+    );
+  };
+
+  useGameBackButton(handleBackButtonClick);
 
   return (
     <ImageBackground
@@ -219,7 +349,7 @@ const GameScreen = ({navigation}) => {
         <View style={styles.container}>
           <View style={styles.innerContainer}>
             <View>
-              <BackButton onPress={handleBackButton} />
+              <BackButton onPress={handleBackButtonClick} />
               <View style={styles.healthBarContainer}>
                 <HealthBar currentPoints={currentPoints} reset={reset} />
               </View>
@@ -262,7 +392,6 @@ const GameScreen = ({navigation}) => {
             {Array.isArray(questionsData) && (
               <Animated.View style={{opacity: fadeAnim}}>
                 <QuestionWithOptions
-                  disabled={isDisabled}
                   questionData={questionsData[questionCount]}
                   checkAns={checkAns}
                   answerClickHandler={debouncedHandleAnswerClick}
@@ -329,18 +458,19 @@ const getStyles = theme =>
     score: {
       color: '#FFFFFF',
       fontSize: normalize(40),
-      fontWeight: '700',
       lineHeight: scaleVertical(42),
+      ...getInterFont('Bold'),
     },
     rankText: {
       color: '#FFFFFF',
       fontSize: normalize(16),
       marginRight: normalize(10),
+      ...getInterFont('Medium'),
     },
     rankNumber: {
       color: '#FFFFFF',
-      fontWeight: '700',
       fontSize: normalize(22),
+      ...getInterFont('Bold'),
     },
     questionContainer: {
       paddingHorizontal: normalize(5),

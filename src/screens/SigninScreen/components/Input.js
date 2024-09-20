@@ -2,15 +2,15 @@ import React, {useRef, useState} from 'react';
 import {View, TextInput, StyleSheet} from 'react-native';
 import {Picker} from '@react-native-picker/picker';
 
-//component
-import Button from '../../../components/Buttons/Button';
-
 //common utils
 import {countryCodes} from '../../../utils/CommonUtils.js/countryCodes';
 
 //font utils
 import {getInterFont} from '../../../utils/FontUtils/interFontHelper';
 import {normalize, scaleVertical} from '../../../utils/DimensionUtils';
+
+//global component
+import Button from '../../../components/Buttons/Button';
 
 const Input = ({isLoading, signinWithPhonenumber}) => {
   const [selectedCountryCode, setSelectedCountryCode] = useState('+91');

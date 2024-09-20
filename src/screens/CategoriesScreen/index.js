@@ -9,9 +9,11 @@ import {
   TouchableOpacity,
   StatusBar,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import * as Animatable from 'react-native-animatable';
+import {useDispatch, useSelector} from 'react-redux';
 
 // dimension utils
 import {normalize, scaleVertical} from '../../utils/DimensionUtils';
@@ -19,10 +21,20 @@ import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 // font utils
 import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 
+//common utils/common functions
+import {triggerButtonCLickSound, triggerHapticFeedback} from '../../utils/CommonUtils.js/commonFunctions';
+
+//routes constants
+import Routes from '../../Navigations/RoutesConstants';
+
+//redux
+import {startActiveSession} from '../../store/activeSessinSlice';
+
 // local components
 import PopularCategories from './components/PopularCategories';
 import AllCategoriesItem from './components/AllCategoriesItem';
 import BackButton from '../../components/Buttons/BackButton';
+
 
 const allCategories = [
   {id: '1', name: 'History', color: '#1E90FF', icon: 'book-open-page-variant'},
@@ -35,8 +47,19 @@ const allCategories = [
   {id: '8', name: 'Programming', color: '#9370DB', icon: 'code-tags'},
 ];
 
-const CategoriesScreen = () => {
+const CategoriesScreen = ({navigation}) => {
+  const dispatch = useDispatch();
+
+  const authData = useSelector(state => state.auth);
+  
+  const {isHapticEnabled, isSoundEnabled} = authData;
+
   const [searchQuery, setSearchQuery] = useState('');
+
+  useFocusEffect(() => {
+    StatusBar.setBackgroundColor('#6a11cb');
+    StatusBar.setBarStyle('light-content');
+  });
 
   const filteredCategories = useMemo(() => {
     return allCategories.filter(category =>
@@ -48,16 +71,27 @@ const CategoriesScreen = () => {
     setSearchQuery('');
   };
 
-  const handleBackButton = () => {
-
-  }
+  const handleCategoryCardPress = item => {
+    if (isHapticEnabled) {
+      triggerHapticFeedback();
+    }
+    if(isSoundEnabled) {
+      triggerButtonCLickSound()
+    }
+    dispatch(
+      startActiveSession({
+        activeCategoryId: item.id,
+        activeCategoryName: item.name,
+      }),
+    );
+    navigation.navigate(Routes.GAME);
+  };
 
   return (
     <SafeAreaView style={styles.flexContainer}>
-      <StatusBar backgroundColor={'#6a11cb'} barStyle={'light-content'} />
       <LinearGradient colors={['#6a11cb', '#2575fc']} style={styles.container}>
         <View style={styles.backButton}>
-          <BackButton onPress={handleBackButton} />
+          <BackButton />
         </View>
 
         <View style={styles.searchContainer}>
@@ -84,7 +118,9 @@ const CategoriesScreen = () => {
         {searchQuery === '' && (
           <>
             <Text style={styles.sectionTitle}>Most Popular</Text>
-            <PopularCategories />
+            <PopularCategories
+              handleCategoryCardPress={handleCategoryCardPress}
+            />
           </>
         )}
 
@@ -93,7 +129,12 @@ const CategoriesScreen = () => {
           <FlatList
             data={filteredCategories}
             showsVerticalScrollIndicator={false}
-            renderItem={({item}) => <AllCategoriesItem item={item} />}
+            renderItem={({item}) => (
+              <AllCategoriesItem
+                item={item}
+                handleCategoryCardPress={handleCategoryCardPress}
+              />
+            )}
             keyExtractor={item => item.id}
             numColumns={2}
             columnWrapperStyle={styles.columnWrapper}

@@ -10,5 +10,9 @@ export const ITEM_WIDTH = normalize(230);
 export const SPACER_WIDTH = normalize((width - ITEM_WIDTH - 33) / 2);
 export const ITEM_SPACING = normalize(10);
 
-//result screen
+//game screen
 export const scorePerQuestion = 5;
+export const numberOfQuestionsToDisplay = 15
+
+//dashboard screen 
+export const maxScoreOfGame = 75

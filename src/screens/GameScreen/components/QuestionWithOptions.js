@@ -4,11 +4,15 @@ import { View, Text, StyleSheet } from "react-native";
 //context
 import { useTheme } from "../../../context/ThemeContext";
 
+//Dimension utils
+import { normalize, scaleVertical } from "../../../utils/DimensionUtils";
+
+//font utils
+import { getInterFont } from "../../../utils/FontUtils/interFontHelper";
+
 //local component
 import OptionButton from "./OptionButton";
 
-//Dimension utils
-import { normalize, scaleVertical } from "../../../utils/DimensionUtils";
 
 const QuestionWithOptions = ({
   questionData,
@@ -82,10 +86,10 @@ const getStyles = (theme) =>
     },
     question: {
       color: "#FFFFFF",
-      fontWeight: "700",
-      fontSize: normalize(30),
+      fontSize: normalize(26),
       lineHeight: scaleVertical(32),
       marginBottom: scaleVertical(30),
+      ...getInterFont("Bold")
     },
     optionsContainer: {
       flexDirection: "row",

@@ -7,11 +7,14 @@ import {
   View,
 } from "react-native";
 
-// Context import
+// Context
 import { useTheme } from "../../context/ThemeContext";
 
-// Utils
+//dimension utils
 import { normalize } from "../../utils/DimensionUtils";
+
+//font utils
+import { getInterFont } from "../../utils/FontUtils/interFontHelper";
 
 /*
  * Usage:
@@ -99,6 +102,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     textTransform: "uppercase",
     padding: normalize(8),
+    ...getInterFont("Medium")
   },
   loadingDefaultStyle: {
     padding: normalize(5),

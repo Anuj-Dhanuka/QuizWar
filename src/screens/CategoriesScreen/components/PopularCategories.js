@@ -8,16 +8,16 @@ import Animated, {
   useSharedValue,
 } from 'react-native-reanimated';
 
-// Local components
-import PopularCategoriesSliderItem from './PopularCategoriesSliderItem';
-import PopularCategoriesIndicators from './PopularCategoriesIndicators';
-
 // Constants
 import {
   ITEM_WIDTH,
   SPACER_WIDTH,
   ITEM_SPACING,
 } from '../../../utils/CommonUtils.js/constants';
+
+// Local components
+import PopularCategoriesSliderItem from './PopularCategoriesSliderItem';
+import PopularCategoriesIndicators from './PopularCategoriesIndicators';
 
 // Sample Data
 const popularCategories = [
@@ -31,7 +31,7 @@ const popularCategories = [
   {id: '8', name: 'Programming', color: '#9370DB', icon: 'code-tags'},
 ];
 
-const PopularCategories = () => {
+const PopularCategories = ({handleCategoryCardPress}) => {
   const [paginationIndex, setPaginationIndex] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(true)
   const [data, setData] = useState(popularCategories);
@@ -88,8 +88,7 @@ const PopularCategories = () => {
   });
 
   const handlePress = (item) => {
-    console.log('Category Pressed:', item.name);
-    // Add your navigation or action logic here
+    handleCategoryCardPress(item)
   };
 
   const onEndReachedHandler = useCallback(() => {
@@ -139,7 +138,7 @@ const PopularCategories = () => {
   );
 };
 
-export default React.memo(PopularCategories);  // Memoize the entire component
+export default React.memo(PopularCategories);
 
 const styles = StyleSheet.create({
   container: {

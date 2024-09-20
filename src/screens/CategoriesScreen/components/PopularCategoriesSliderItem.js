@@ -21,7 +21,6 @@ const PopularCategoriesSliderItem = ({item, index, scrollX, onPress}) => {
     return {
       transform: [
         {
-          // Adjust scaling to ensure the center item is larger and left/right items are smaller
           scale: interpolate(
             scrollX.value,
             [
@@ -29,12 +28,11 @@ const PopularCategoriesSliderItem = ({item, index, scrollX, onPress}) => {
               index * (ITEM_WIDTH + ITEM_SPACING),
               (index + 1) * (ITEM_WIDTH + ITEM_SPACING),
             ],
-            [0.8, 1, 0.8],  // Reduce scale for previous and next items
+            [0.8, 1, 0.8],
             Extrapolation.CLAMP
           ),
         },
         {
-          // Translate the item horizontally to ensure equal spacing on both sides
           translateX: interpolate(
             scrollX.value,
             [
@@ -42,7 +40,7 @@ const PopularCategoriesSliderItem = ({item, index, scrollX, onPress}) => {
               index * (ITEM_WIDTH + ITEM_SPACING),
               (index + 1) * (ITEM_WIDTH + ITEM_SPACING),
             ],
-            [-ITEM_SPACING, 0, ITEM_SPACING],  // Adjust to shift the left/right items to the edges
+            [-ITEM_SPACING, 0, ITEM_SPACING],
             Extrapolation.CLAMP
           ),
         },
@@ -54,7 +52,6 @@ const PopularCategoriesSliderItem = ({item, index, scrollX, onPress}) => {
     onPress(item)
   }
   
-
   return (
     <Animated.View style={[styles.sliderItemOuterContainer, animatedStyle]}>
       <TouchableOpacity 
