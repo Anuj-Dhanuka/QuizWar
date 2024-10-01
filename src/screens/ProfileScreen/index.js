@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {useState} from 'react';
 import {
   View,
   Text,
@@ -10,33 +10,48 @@ import {
   Image,
   Animated,
 } from 'react-native';
-import { useFocusEffect } from '@react-navigation/native';
-import { useSelector } from 'react-redux';
+import {useFocusEffect} from '@react-navigation/native';
+import {useSelector} from 'react-redux';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import LinearGradient from 'react-native-linear-gradient';
+import moment from 'moment';
 
 //dimension utils
-import { normalize, scaleVertical } from '../../utils/DimensionUtils';
+import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 
 // font utils
-import { getInterFont } from '../../utils/FontUtils/interFontHelper';
+import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 
 //common utils/common functions
-import { triggerButtonCLickSound, triggerHapticFeedback } from '../../utils/CommonUtils.js/commonFunctions';
+import {
+  triggerButtonCLickSound,
+  triggerHapticFeedback,
+} from '../../utils/CommonUtils.js/commonFunctions';
 
 //route constants
 import Routes from '../../Navigations/RoutesConstants';
 
-const ProfileScreen = ({ navigation }) => {
+const ProfileScreen = ({navigation}) => {
   const [animation] = useState(new Animated.Value(0));
 
   const userData = useSelector(state => state.auth);
 
   const {isHapticEnabled, isSoundEnabled} = userData;
-  
+
+  const truncateText = (text, limit) => {
+    return text.length > limit ? text.slice(0, limit) + '...' : text;
+  };
+  const truncateEmail = (email, limit) => {
+    const [localPart, domain] = email.split('@');
+    if (localPart.length > limit) {
+      return localPart.slice(0, limit) + '...' + '@' + domain;
+    }
+    return email;
+  };
+
   useFocusEffect(() => {
-    StatusBar.setBackgroundColor("#141E30");
-    StatusBar.setBarStyle("light-content");  
+    StatusBar.setBackgroundColor('#141E30');
+    StatusBar.setBarStyle('light-content');
   });
 
   Animated.timing(animation, {
@@ -46,21 +61,21 @@ const ProfileScreen = ({ navigation }) => {
   }).start();
 
   const handleEditProfile = () => {
-    if(isHapticEnabled) {
-      triggerHapticFeedback()
+    if (isHapticEnabled) {
+      triggerHapticFeedback();
     }
-    if(isSoundEnabled) {
-      triggerButtonCLickSound()
+    if (isSoundEnabled) {
+      triggerButtonCLickSound();
     }
     navigation.navigate(Routes.EDIT_PROFILE_SCREEN);
   };
 
   const handleOpenSettings = () => {
-    if(isHapticEnabled){
-      triggerHapticFeedback()
+    if (isHapticEnabled) {
+      triggerHapticFeedback();
     }
-    if(isSoundEnabled) {
-      triggerButtonCLickSound()
+    if (isSoundEnabled) {
+      triggerButtonCLickSound();
     }
     navigation.navigate(Routes.SETTINGS);
   };
@@ -69,30 +84,54 @@ const ProfileScreen = ({ navigation }) => {
     <SafeAreaView style={styles.flexContainer}>
       <LinearGradient colors={['#141E30', '#243B55']} style={styles.container}>
         <ScrollView>
-          <Animated.View style={[styles.headerContainer, { opacity: animation }]}>
+          <Animated.View style={[styles.headerContainer, {opacity: animation}]}>
             <Image
-              source={{ uri: 'https://via.placeholder.com/100' }}
+              source={{uri: userData.profilePicture}}
               style={styles.profileImage}
             />
-            <Text style={styles.profileName}>{userData.name}</Text>
-            <TouchableOpacity onPress={handleEditProfile} style={styles.editButton}>
-              <Icon name="account-edit-outline" size={normalize(24)} color="#fff" />
+            <Text style={styles.profileName}>
+              {truncateText(userData.fullName, 20)}{' '}
+              {/* Limiting the full name to 20 characters */}
+            </Text>
+            <TouchableOpacity
+              onPress={handleEditProfile}
+              style={styles.editButton}>
+              <Icon
+                name="account-edit-outline"
+                size={normalize(24)}
+                color="#fff"
+              />
             </TouchableOpacity>
           </Animated.View>
 
           <View style={styles.infoSection}>
-            <ProfileInfoCard label="Email" value={userData.email} icon="email-outline" />
-            <ProfileInfoCard label="Phone" value={userData.phoneNumber} icon="phone-outline" />
-            <ProfileInfoCard label="Date of Birth" value={userData.dateOfBirth} icon="calendar-outline" />
-            <ProfileInfoCard label="Location" value="India" icon="map-marker-outline" />
+            <ProfileInfoCard
+              label="Email"
+              value={truncateEmail(userData.email, 10)}
+              icon="email-outline"
+            />
+            <ProfileInfoCard
+              label="Phone"
+              value={userData.phoneNumber}
+              icon="phone-outline"
+            />
+            <ProfileInfoCard
+              label="Date of Birth"
+              value={moment(userData.dateOfBirth).format('ll')}
+              icon="calendar-outline"
+            />
+            <ProfileInfoCard
+              label="Location"
+              value={userData.country}
+              icon="map-marker-outline"
+            />
             <ProfileInfoCard label="Language" value="English" icon="earth" />
           </View>
 
           <View style={styles.settingsContainer}>
             <TouchableOpacity
               style={styles.settingsButton}
-              onPress={handleOpenSettings}
-            >
+              onPress={handleOpenSettings}>
               <Icon name="cog-outline" size={normalize(24)} color="#fff" />
               <Text style={styles.settingsButtonText}>Settings</Text>
             </TouchableOpacity>
@@ -103,7 +142,7 @@ const ProfileScreen = ({ navigation }) => {
   );
 };
 
-const ProfileInfoCard = ({ label, value, icon }) => (
+const ProfileInfoCard = ({label, value, icon}) => (
   <View style={styles.cardContainer}>
     <View style={styles.cardContent}>
       <View style={styles.infoLabelContainer}>
@@ -153,7 +192,7 @@ const styles = StyleSheet.create({
     borderRadius: normalize(20),
     shadowColor: '#000',
     shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: {width: 0, height: 4},
     elevation: 6,
   },
   infoSection: {
@@ -163,7 +202,7 @@ const styles = StyleSheet.create({
     padding: normalize(20),
     shadowColor: '#000',
     shadowOpacity: 0.15,
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: {width: 0, height: 2},
     elevation: 4,
   },
   cardContainer: {
@@ -176,7 +215,7 @@ const styles = StyleSheet.create({
     borderColor: '#9ACDFF50',
     shadowColor: '#000',
     shadowOpacity: 0.1,
-    shadowOffset: { width: 0, height: 5 },
+    shadowOffset: {width: 0, height: 5},
     elevation: 2,
   },
   cardContent: {
@@ -213,7 +252,7 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.3,
     shadowRadius: normalize(8),
-    shadowOffset: { width: 0, height: 4 },
+    shadowOffset: {width: 0, height: 4},
     elevation: 5,
   },
   settingsButtonText: {

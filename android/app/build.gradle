@@ -87,6 +87,7 @@ android {
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
         versionName "1.0"
+        resValue "string", "default_web_client_id", "AIzaSyB-E3AYacVOx2NkRHMskQHuBhy_G45uGsE"
     }
 
     signingConfigs {
@@ -114,6 +115,8 @@ android {
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
     implementation("com.facebook.react:react-android")
+
+    implementation 'com.google.firebase:firebase-auth:22.0.0'  // Ensure latest version of Firebase Auth
 
 
     if (hermesEnabled.toBoolean()) {

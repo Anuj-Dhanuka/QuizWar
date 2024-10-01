@@ -1,53 +1,120 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
+import { getTokenAndUserId } from '../utils/CommonUtils.js/commonFunctions';
+import { Apiutils } from '../utils/ApiUtils';
 
 const initialState = {
-  userId: 123456789,
-  token: 1234,
-  name: "Anuj",
-  email: "anujd973@gmail.com",
-  phoneNumber: "8978264705",
-  dateOfBirth: "15-02-1997",
-  version: '1.0.0',
+  userId: null,
+  token: null,
+  fullName: null,
+  email: null,
+  phoneNumber: null,
+  dateOfBirth: null,
+  gender: null,
+  country: null,
+  city: null,
+  profilePicture: null,
+  termsAccepted: null,
+  privacyAccepted: null,
   isHapticEnabled: false,
-  isSoundEnabled: false
+  isSoundEnabled: false,
+  authDataIsLoading: false,
+  authDataError: null,
 };
+
+export const fetchFromAsyncStorage = createAsyncThunk(
+  'auth/fetchFromAsyncStorage',
+  async () => {
+    const data = await getTokenAndUserId();
+    return data;
+  }
+);
+
+export const fetchUserProfile = createAsyncThunk(
+  'auth/fetchProfileData',
+  async (userId, { rejectWithValue }) => {
+    try {
+      const profileData = await Apiutils.fetchUserProfile(userId);
+      console.log("user profile fetched successfully")
+      return profileData;
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      return rejectWithValue(error.message);
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: 'auth',
   initialState,
   reducers: {
     login: (state, action) => {
-      state.userId = action.payload.userId;
-      state.token = action.payload.token;
-      state.name = action.payload.name;
-      state.email = action.payload.email;
-      state.phoneNumber = action.payload.phoneNumber;
-      state.dateOfBirth = action.payload.dateOfBirth;
-      state.version = action.payload.version
-      state.isHapticEnabled = action.payload.isHapticEnabled
-      state.isSoundEnabled = action.payload.isSoundEnabled
+        state.userId = action.payload.userId;
+        state.token = action.payload.token;
+        state.fullName = action.payload.fullName;
+        state.email = action.payload.email;
+        state.phoneNumber = action.payload.phoneNumber;
+        state.dateOfBirth = action.payload.dateOfBirth;
+        state.gender = action.payload.gender;
+        state.country = action.payload.country;
+        state.city = action.payload.city;
+        state.profilePicture = action.payload.profilePicture;
+        state.termsAccepted =action.payload.termsAccepted;
+        state.privacyAccepted = action.payload.privacyAccepted;
+        state.isHapticEnabled = action.payload.isHapticEnabled;
+        state.isSoundEnabled = action.payload.isSoundEnabled;
     },
-    logout: (state) => {
-      state.userId = 123456789;
-      state.token = 1234;
-      state.name = "Anuj";
-      state.email = "anujd973@gmail.com";
-      state.phoneNumber = "8978264705";
-      state.dateOfBirth = "15-02-1997";
-      state.version = "1.0.0"
-      state.isHapticEnabled = false
-      state.isSoundEnabled = false
+    logout: state => {
+      return initialState;
     },
     editProfile: (state, action) => {
-      state.name = action.payload.name;
-      state.email = action.payload.email;
-      state.dateOfBirth = action.payload.dateOfBirth;
-      state.isHapticEnabled = action.payload.isHapticEnabled
-      state.isSoundEnabled = action.payload.isSoundEnabled
+        state.fullName = action.payload.fullName;
+        state.email = action.payload.email;
+        state.dateOfBirth = action.payload.dateOfBirth;
+        state.country = action.payload.country;
+        state.city = action.payload.city;
+        state.profilePicture = action.payload.profilePicture;
+        state.isHapticEnabled = action.payload.isHapticEnabled;
+        state.isSoundEnabled = action.payload.isSoundEnabled;
     },
-    resetAuth: (state) => {
-        return initialState;
+    resetAuth: state => {
+      return initialState;
     },
+  },
+  extraReducers: (builder) => {
+    builder
+      .addCase(fetchFromAsyncStorage.fulfilled, (state, action) => {
+        if (action.payload) {
+          state.userId = action.payload.userId;
+          state.token = action.payload.token;
+        }
+      })
+      .addCase(fetchFromAsyncStorage.rejected, (state, action) => {
+        console.log('Failed to fetch userId and token:', action.error.message);
+      })
+
+      .addCase(fetchUserProfile.pending, (state) => {
+        state.profileDataIsLoading = true;
+        state.profileDataError = null;
+      })
+      .addCase(fetchUserProfile.fulfilled, (state, action) => {
+        state.profileDataIsLoading = false;
+        if (action.payload) {
+          state.fullName = action.payload.fullName;
+          state.email = action.payload.email;
+          state.phoneNumber = action.payload.phoneNumber;
+          state.dateOfBirth = action.payload.dateOfBirth;
+          state.gender = action.payload.gender;
+          state.country = action.payload.country;
+          state.city = action.payload.city;
+          state.profilePicture = action.payload.profilePicture;
+          state.isHapticEnabled = action.payload.isHapticEnabled;
+          state.isSoundEnabled = action.payload.isSoundEnabled;
+        }
+      })
+      .addCase(fetchUserProfile.rejected, (state, action) => {
+        state.profileDataIsLoading = false;
+        state.profileDataError = action.payload || 'Failed to fetch profile data';
+      });
   },
 });
 

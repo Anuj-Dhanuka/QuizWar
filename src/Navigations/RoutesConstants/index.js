@@ -1,4 +1,6 @@
 const Routes = {
+  SIGN_IN: "SIGN_IN",
+  REGISTRATION: "REGISTRATION",
   TABS: 'Tabs',
   HOME: 'Home',
   DASHBOARD: 'Dashboard',

@@ -1,16 +1,15 @@
-import React from "react";
-import { Text, StyleSheet, Pressable } from "react-native";
-import * as Animatable from "react-native-animatable"; // Import Animatable
+import React from 'react';
+import {Text, StyleSheet, Pressable} from 'react-native';
+import * as Animatable from 'react-native-animatable'; // Import Animatable
 
 //context
-import { useTheme } from "../../../context/ThemeContext";
+import {useTheme} from '../../../context/ThemeContext';
 
 //dimension utils
-import { normalize, scaleVertical } from "../../../utils/DimensionUtils";
+import {normalize, scaleVertical} from '../../../utils/DimensionUtils';
 
 //font utils
-import { getInterFont } from "../../../utils/FontUtils/interFontHelper";
-
+import {getInterFont} from '../../../utils/FontUtils/interFontHelper';
 
 const OptionButton = ({
   text,
@@ -18,9 +17,9 @@ const OptionButton = ({
   answerClickHandler,
   checkAns,
   correctOption,
-  isDisable
+  isDisable,
 }) => {
-  const { currentTheme } = useTheme();
+  const {currentTheme} = useTheme();
 
   let hasGreenBorder = false;
 
@@ -30,39 +29,37 @@ const OptionButton = ({
 
   const styles = getStyles(currentTheme, hasGreenBorder);
 
-  let btnBackgroundColor = "transparent";
+  let btnBackgroundColor = 'transparent';
   let btnBorderWidth = hasGreenBorder ? scaleVertical(4) : scaleVertical(2);
-  
+
   if (checkAns.id === buttonId) {
     btnBorderWidth = 0;
     if (checkAns.ans) {
-      btnBackgroundColor = "#1CAE4A";
+      btnBackgroundColor = '#1CAE4A';
     } else {
-      btnBackgroundColor = "#EA596E";
+      btnBackgroundColor = '#EA596E';
     }
   }
 
   let animationType = null;
   if (checkAns.id === buttonId) {
-    animationType = checkAns.ans ? "pulse" : "shake";
+    animationType = checkAns.ans ? 'pulse' : 'shake';
   } else if (buttonId === correctOption) {
-    animationType = "rubberBand";
+    animationType = 'rubberBand';
   }
 
   return (
     <Animatable.View
       animation={animationType}
       duration={800}
-      easing="ease-in-out"
-    >
+      easing="ease-in-out">
       <Pressable
         style={[
           styles.optionButton,
-          { backgroundColor: btnBackgroundColor, borderWidth: btnBorderWidth },
+          {backgroundColor: btnBackgroundColor, borderWidth: btnBorderWidth},
         ]}
-        onPress={() => answerClickHandler(buttonId)}
-        id={buttonId}
-        disabled={isDisable}
+        onPress={() => answerClickHandler(buttonId)} // Pass button ID to handler
+        disabled={isDisable} // Disable button after first click
       >
         <Text style={styles.optionText}>{text}</Text>
       </Pressable>
@@ -75,20 +72,20 @@ const getStyles = (theme, hasGreenBorder) =>
     optionButton: {
       height: scaleVertical(94),
       borderWidth: normalize(2),
-      borderColor: hasGreenBorder ? "#1CAE4A" : "#ADADAD",
-      backgroundColor: "transparent",
+      borderColor: hasGreenBorder ? '#1CAE4A' : '#ADADAD',
+      backgroundColor: 'transparent',
       marginVertical: scaleVertical(5),
       borderRadius: normalize(14),
-      alignItems: "center",
-      justifyContent: "center",
+      alignItems: 'center',
+      justifyContent: 'center',
       width: scaleVertical(340 / 2),
       padding: normalize(4),
     },
     optionText: {
       fontSize: normalize(20),
-      color: "#FFFFFF",
-      textAlign: "center",
-      ...getInterFont("Bold")
+      color: '#FFFFFF',
+      textAlign: 'center',
+      ...getInterFont('Bold'),
     },
   });
 

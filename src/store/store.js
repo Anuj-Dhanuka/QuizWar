@@ -8,6 +8,8 @@ import authSlice from './authSlice';
 import userPerformanceSlice from './userPerformanceSlice';
 import activeSessinSlice from './activeSessinSlice';
 import gameSlice from './gameSlice';
+import gameCategoriesSlice from './gameCategoriesSlice';
+import authTokenSlice from './authTokenSlice';
 
 const persistConfig = {
   key: 'root',
@@ -21,6 +23,8 @@ const rootReducer = combineReducers({
   userPerformance: userPerformanceSlice,
   activeSession: activeSessinSlice,
   game: gameSlice,
+  gameCategories: gameCategoriesSlice,
+  authToken: authTokenSlice,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

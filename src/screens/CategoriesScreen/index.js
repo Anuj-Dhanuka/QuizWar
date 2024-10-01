@@ -36,21 +36,11 @@ import AllCategoriesItem from './components/AllCategoriesItem';
 import BackButton from '../../components/Buttons/BackButton';
 
 
-const allCategories = [
-  {id: '1', name: 'History', color: '#1E90FF', icon: 'book-open-page-variant'},
-  {id: '2', name: 'Mythology', color: '#00CED1', icon: 'account-group'}, // (Represents groups of gods or mythical beings)
-  {id: '3', name: 'Nature', color: '#32CD32', icon: 'tree'},
-  {id: '4', name: 'Travel', color: '#4682B4', icon: 'airplane'},
-  {id: '5', name: 'Health', color: '#FF4500', icon: 'heart-pulse'},
-  {id: '6', name: 'Mathematics', color: '#6A5ACD', icon: 'math-compass'},
-  {id: '7', name: 'Music', color: '#FF69B4', icon: 'music-note'},
-  {id: '8', name: 'Programming', color: '#9370DB', icon: 'code-tags'},
-];
-
 const CategoriesScreen = ({navigation}) => {
   const dispatch = useDispatch();
 
   const authData = useSelector(state => state.auth);
+  const {gameCategoriesData} = useSelector(state => state.gameCategories)
   
   const {isHapticEnabled, isSoundEnabled} = authData;
 
@@ -62,7 +52,7 @@ const CategoriesScreen = ({navigation}) => {
   });
 
   const filteredCategories = useMemo(() => {
-    return allCategories.filter(category =>
+    return gameCategoriesData?.filter(category =>
       category.name.toLowerCase().includes(searchQuery.toLowerCase()),
     );
   }, [searchQuery]);
@@ -72,6 +62,7 @@ const CategoriesScreen = ({navigation}) => {
   };
 
   const handleCategoryCardPress = item => {
+    console.log(item)
     if (isHapticEnabled) {
       triggerHapticFeedback();
     }

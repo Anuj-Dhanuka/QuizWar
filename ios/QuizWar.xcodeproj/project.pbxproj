@@ -77,6 +77,8 @@
 		65436768276C4DCEB9CAF189 /* Inter_28pt-SemiBoldItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8194C6179CEB4F3E991DA357 /* Inter_28pt-SemiBoldItalic.ttf */; };
 		2D968D4A82584AC4B30135B1 /* Inter_28pt-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = FD505826FC0544B280DA0702 /* Inter_28pt-Thin.ttf */; };
 		806E227F7847466FB62A2037 /* Inter_28pt-ThinItalic.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 89BD31D652D14C64B636CCEA /* Inter_28pt-ThinItalic.ttf */; };
+		5955F516DAE84F76BFABE18B /* BootSplash.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = CE7970218C0B4EF08B175E23 /* BootSplash.storyboard */; };
+		8DF01A77CFB6485B871DDD49 /* Colors.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 75A2E1761E85411A905C5166 /* Colors.xcassets */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -171,6 +173,8 @@
 		8194C6179CEB4F3E991DA357 /* Inter_28pt-SemiBoldItalic.ttf */ = {isa = PBXFileReference; name = "Inter_28pt-SemiBoldItalic.ttf"; path = "../src/assets/fonts/inter/Inter_28pt-SemiBoldItalic.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		FD505826FC0544B280DA0702 /* Inter_28pt-Thin.ttf */ = {isa = PBXFileReference; name = "Inter_28pt-Thin.ttf"; path = "../src/assets/fonts/inter/Inter_28pt-Thin.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
 		89BD31D652D14C64B636CCEA /* Inter_28pt-ThinItalic.ttf */ = {isa = PBXFileReference; name = "Inter_28pt-ThinItalic.ttf"; path = "../src/assets/fonts/inter/Inter_28pt-ThinItalic.ttf"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		CE7970218C0B4EF08B175E23 /* BootSplash.storyboard */ = {isa = PBXFileReference; name = "BootSplash.storyboard"; path = "QuizWar/BootSplash.storyboard"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = unknown; explicitFileType = undefined; includeInIndex = 0; };
+		75A2E1761E85411A905C5166 /* Colors.xcassets */ = {isa = PBXFileReference; name = "Colors.xcassets"; path = "QuizWar/Colors.xcassets"; sourceTree = "<group>"; fileEncoding = undefined; lastKnownFileType = folder.assetcatalog; explicitFileType = undefined; includeInIndex = 0; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -220,6 +224,8 @@
 				81AB9BB72411601600AC10FF /* LaunchScreen.storyboard */,
 				13B07FB71A68108700A75B9A /* main.m */,
 				13B07FB81A68108700A75B9A /* PrivacyInfo.xcprivacy */,
+				CE7970218C0B4EF08B175E23 /* BootSplash.storyboard */,
+				75A2E1761E85411A905C5166 /* Colors.xcassets */,
 			);
 			name = QuizWar;
 			sourceTree = "<group>";
@@ -506,6 +512,8 @@
 				65436768276C4DCEB9CAF189 /* Inter_28pt-SemiBoldItalic.ttf in Resources */,
 				2D968D4A82584AC4B30135B1 /* Inter_28pt-Thin.ttf in Resources */,
 				806E227F7847466FB62A2037 /* Inter_28pt-ThinItalic.ttf in Resources */,
+				5955F516DAE84F76BFABE18B /* BootSplash.storyboard in Resources */,
+				8DF01A77CFB6485B871DDD49 /* Colors.xcassets in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

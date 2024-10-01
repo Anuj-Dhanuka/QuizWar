@@ -16,6 +16,7 @@ const initialState = {
   categoryName: null,
   monthlyPoints: 0,
   totalPoints: 0,
+  isUpdateScoreRequired: false,
 };
 
 // Create the game slice
@@ -54,10 +55,13 @@ const gameSlice = createSlice({
       if (monthlyPoints !== undefined) state.monthlyPoints = monthlyPoints;
       if (totalPoints !== undefined) state.totalPoints = totalPoints;
     },
+    updateScoreUpdateRequired: (state, action) => {
+      state.isUpdateScoreRequired = action.payload.isUpdateScoreRequired;
+    },
     resetGame: () => initialState,
   },
 });
 
 // Export actions and reducer
-export const { updateGameState, resetGame } = gameSlice.actions;
+export const { updateGameState, updateScoreUpdateRequired, resetGame } = gameSlice.actions;
 export default gameSlice.reducer;

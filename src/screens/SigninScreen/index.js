@@ -1,4 +1,4 @@
-import React, {useEffect, useState, useRef} from 'react';
+import React, {useEffect, useState, useRef, useCallback} from 'react';
 import {
   View,
   Text,
@@ -6,15 +6,19 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StatusBar,
   Image,
 } from 'react-native';
+import {useFocusEffect} from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {parsePhoneNumberFromString} from 'libphonenumber-js';
+import Toast from 'react-native-simple-toast';
 
 //context
 import {useTheme} from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 //dimension utils
 import {normalize, scaleVertical} from '../../utils/DimensionUtils';
@@ -22,12 +26,20 @@ import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 //font utils
 import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 
+//common utils //common functions
+import { storeTokenAndUserId } from '../../utils/CommonUtils.js/commonFunctions';
+
 //local components
 import Input from './components/Input';
 import OtpInput from './components/OtpInput';
+import Routes from '../../Navigations/RoutesConstants';
+import { useDispatch } from 'react-redux';
+import { storeUserIdAndTokenInRedux } from '../../store';
 
 function SigninScreen({navigation}) {
+  const dispatch = useDispatch()
   const {currentTheme} = useTheme();
+  const { storeUserIdandTokenInContext } = useAuth();
   const confirmRef = useRef(null);
 
   const [phonenumber, setPhonenumber] = useState('');
@@ -37,6 +49,32 @@ function SigninScreen({navigation}) {
   const [isOtpScreenEnable, setIsOtpScreenEnabled] = useState(false);
 
   const styles = getStyles(currentTheme);
+
+  useFocusEffect(
+    useCallback(() => {
+      const statusBarBackgroundColor = '#FFFFFF';
+      const statusBarStyle = 'dark-content';
+      
+      if (Platform.OS === 'android' && statusBarBackgroundColor) {
+        StatusBar.setBackgroundColor(statusBarBackgroundColor);
+      }
+
+      StatusBar.setBarStyle(statusBarStyle);
+
+      return () => {
+        StatusBar.setBarStyle('default');
+      };
+    }, [currentTheme])
+  );
+
+  const clearAll = async () => {
+    try {
+      await AsyncStorage.clear();
+      console.log('All data cleared');
+    } catch (error) {
+      console.error('Error clearing AsyncStorage:', error);
+    }
+  };
 
   useEffect(() => {
     if (isResendDisabled) {
@@ -54,15 +92,6 @@ function SigninScreen({navigation}) {
     }
   }, [isResendDisabled]);
 
-  const storeTokenAndUserId = async (token, userId) => {
-    try {
-      await AsyncStorage.setItem('userToken', token);
-      await AsyncStorage.setItem('userId', userId);
-    } catch (e) {
-      console.log('Failed to save token and userId in AsyncStorage', e);
-    }
-  };
-
   const validatePhoneNumber = (number, country) => {
     const phoneNumber = parsePhoneNumberFromString(number, country);
     return phoneNumber && phoneNumber.isValid();
@@ -70,7 +99,7 @@ function SigninScreen({navigation}) {
 
   const signinWithPhonenumber = async phonenumber => {
     if (!validatePhoneNumber(phonenumber)) {
-      alert('Please enter a valid phone number.');
+      Toast.show('Please enter a valid phone number.', Toast.LONG);
       return;
     }
     setIsLoading(true);
@@ -82,7 +111,7 @@ function SigninScreen({navigation}) {
       setIsResendDisabled(true);
       setTimer(30);
     } catch (error) {
-      console.log('Error sending code', error);
+      Toast.show(`Please retry, ${error}`, Toast.LONG);
     } finally {
       setIsLoading(false);
     }
@@ -95,9 +124,8 @@ function SigninScreen({navigation}) {
       const userCredential = await confirmRef.current.confirm(code);
       const user = userCredential.user;
       const idToken = await user.getIdToken();
-      const userId = user.uid
-
-      console.log(idToken, userId)
+      const userId = user.uid;
+      Toast.show(`Otp verified`, Toast.LONG);
 
       const userDocument = await firestore()
         .collection('Users')
@@ -105,12 +133,18 @@ function SigninScreen({navigation}) {
         .get();
 
       if (userDocument.exists) {
-        console.log('exists');
+        await storeTokenAndUserId(idToken, userId);
+        await storeUserIdandTokenInContext(userId, idToken)
+        dispatch(storeUserIdAndTokenInRedux({token: idToken , userId: userId}))
       } else {
-        console.log('does not exists');
+        navigation.navigate(Routes.REGISTRATION, {
+          idToken,
+          userId,
+          phonenumber,
+        });
       }
     } catch (error) {
-      console.log('Invalid code', error);
+      Toast.show(`Please retry, ${error}`, Toast.LONG);
     } finally {
       setIsLoading(false);
       setIsResendDisabled(false);
@@ -120,7 +154,8 @@ function SigninScreen({navigation}) {
   const handleResendCode = async () => {
     confirmRef.current = null;
     setPhonenumber('');
-    setIsResendDisabled(true);
+    setIsOtpScreenEnabled(false);
+    setIsResendDisabled(false);
   };
 
   return (
@@ -147,6 +182,7 @@ function SigninScreen({navigation}) {
               timer={timer}
               isLoading={isLoading}
               confirmCode={confirmCode}
+              handleResendCode={handleResendCode}
             />
           ) : (
             <Input
@@ -191,5 +227,5 @@ const getStyles = currentTheme =>
       color: '#0a1e18',
       marginBottom: scaleVertical(40),
       ...getInterFont('Medium'),
-    }
+    },
   });

@@ -10,7 +10,7 @@ function Loader({ isLoaderActive }) {
       <ActivityIndicator
         size="large"
         animating={isLoaderActive}
-        color={currentTheme.white}
+        color={"#FFFFFF"}
       />
     </View>
   );

@@ -1,5 +1,5 @@
-import React, {useState} from 'react';
-import {View, Alert, StyleSheet, Text, Pressable} from 'react-native';
+import React, {useState, useEffect} from 'react';
+import {View, Text, Pressable, StyleSheet} from 'react-native';
 import OtpTextInput from 'react-native-otp-textinput';
 
 //dimension utils
@@ -11,26 +11,42 @@ import {getInterFont} from '../../../utils/FontUtils/interFontHelper';
 //components
 import Button from '../../../components/Buttons/Button';
 
-const OtpInput = ({isLoading, confirmCode}) => {
+const OtpInput = ({isLoading, confirmCode, handleResendCode}) => {
   const [otp, setOtp] = useState('');
+  const [timer, setTimer] = useState(30);
+  const [isResendDisabled, setIsResendDisabled] = useState(true);
+
+  useEffect(() => {
+    let interval = null;
+    
+    if (timer > 0) {
+      interval = setInterval(() => {
+        setTimer(prev => prev - 1);
+      }, 1000);
+    } else {
+      setIsResendDisabled(false);
+    }
+    
+    return () => clearInterval(interval);
+  }, [timer]);
 
   const handleVerifyOtp = () => {
-    confirmCode(otp)
+    confirmCode(otp);
   };
 
   const handleRetry = () => {
-
+    handleResendCode()
   };
 
   return (
     <View>
       <OtpTextInput
         handleTextChange={otp => setOtp(otp)}
-        inputCount={6} // Number of OTP digits
-        tintColor="#6a5acd" // Focused color
-        offTintColor="#bbb" // Unfocused color
-        containerStyle={styles.otpContainer} // Container style
-        textInputStyle={styles.otpInputBox} // Box style for inputs
+        inputCount={6} 
+        tintColor="#6a5acd"
+        offTintColor="#bbb"
+        containerStyle={styles.otpContainer}
+        textInputStyle={styles.otpInputBox} 
       />
       <Button
         onPress={handleVerifyOtp}
@@ -39,8 +55,14 @@ const OtpInput = ({isLoading, confirmCode}) => {
         buttonStyle={styles.button}>
         CONFIRM CODE
       </Button>
-      <Pressable style={styles.resendButton}>
-        <Text style={styles.resendButtonText}>Resend Otp</Text>
+
+      <Pressable
+        onPress={handleRetry}
+        disabled={isResendDisabled}
+        style={styles.resendButton}>
+        <Text style={styles.resendButtonText}>
+          {isResendDisabled ? `Resend OTP in (${timer}s)` : 'Resend OTP'}
+        </Text>
       </Pressable>
     </View>
   );

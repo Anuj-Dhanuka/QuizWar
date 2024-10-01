@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useEffect} from 'react';
 import {
   View,
   Text,
@@ -8,11 +8,13 @@ import {
   StatusBar,
 } from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
-import {useSelector} from 'react-redux';
+import {useDispatch, useSelector} from 'react-redux';
 import LinearGradient from 'react-native-linear-gradient';
 import * as Animatable from 'react-native-animatable';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import {AnimatedCircularProgress} from 'react-native-circular-progress';
+import firestore from '@react-native-firebase/firestore';
+import {Apiutils} from '../../utils/ApiUtils';
 
 //routes constants
 import Routes from '../../Navigations/RoutesConstants';
@@ -24,25 +26,66 @@ import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 
 //common utils/common function
-import {triggerButtonCLickSound, triggerHapticFeedback} from '../../utils/CommonUtils.js/commonFunctions';
+import {
+  triggerButtonCLickSound,
+  triggerHapticFeedback,
+} from '../../utils/CommonUtils.js/commonFunctions';
 import {useBackButton} from '../../utils/CommonUtils.js/commonFunctions';
 
 //common utils/constants
 import {scorePerQuestion} from '../../utils/CommonUtils.js/constants';
 
+//store
+import {updateScoreUpdateRequired} from '../../store';
+
 const ResultScreen = ({navigation}) => {
+  const dispatch = useDispatch();
+
   const userGameData = useSelector(state => state.game);
-  console.log(userGameData)
+  const {score, categoryId, categoryName, timeTaken, isUpdateScoreRequired} =
+    userGameData;
+  console.log('game data: ', isUpdateScoreRequired);
   const userPerformance = useSelector(state => state.userPerformance);
   const userData = useSelector(state => state.auth);
 
   useBackButton(Routes.CATEGORIES);
 
-  const {isHapticEnabled, isSoundEnabled} = userData;
+  const {isHapticEnabled, isSoundEnabled, userId} = userData;
   const percentage =
     (userGameData.correctAnswers /
       (userGameData.correctAnswers + userGameData.wrongAnswers)) *
     100;
+
+  useEffect(() => {
+    const scoreData = {
+      userId,
+      categoryId,
+      categoryName,
+      score,
+      timeTaken,
+      updatedAt: firestore.FieldValue.serverTimestamp(),
+    };
+    if (userId) {
+      if (isUpdateScoreRequired) {
+        Apiutils.updateUserScore(userId, scoreData)
+          .then(() => {
+            console.log('Score updated successfully in Firebase');
+            dispatch(updateScoreUpdateRequired({isUpdateScoreRequired: false}));
+          })
+          .catch(error => {
+            console.error('Error updating score:', error);
+          });
+      }
+
+      Apiutils.updateUserPerformance(userId, userPerformance)
+        .then(() => {
+          console.log('user performance updated successfully in Firebase');
+        })
+        .catch(error => {
+          console.error('Error updating score:', error);
+        });
+    }
+  }, []);
 
   useFocusEffect(() => {
     StatusBar.setBackgroundColor('#6a11cb');
@@ -53,8 +96,8 @@ const ResultScreen = ({navigation}) => {
     if (isHapticEnabled) {
       triggerHapticFeedback();
     }
-    if(isSoundEnabled) {
-      triggerButtonCLickSound()
+    if (isSoundEnabled) {
+      triggerButtonCLickSound();
     }
     navigation.navigate(Routes.CATEGORIES);
   };
@@ -63,8 +106,8 @@ const ResultScreen = ({navigation}) => {
     if (isHapticEnabled) {
       triggerHapticFeedback();
     }
-    if(isSoundEnabled) {
-      triggerButtonCLickSound()
+    if (isSoundEnabled) {
+      triggerButtonCLickSound();
     }
     navigation.navigate(Routes.DASHBOARD);
   };
@@ -73,8 +116,8 @@ const ResultScreen = ({navigation}) => {
     if (isHapticEnabled) {
       triggerHapticFeedback();
     }
-    if(isSoundEnabled) {
-      triggerButtonCLickSound()
+    if (isSoundEnabled) {
+      triggerButtonCLickSound();
     }
     navigation.navigate(Routes.HOME);
   };
@@ -83,8 +126,8 @@ const ResultScreen = ({navigation}) => {
     if (isHapticEnabled) {
       triggerHapticFeedback();
     }
-    if(isSoundEnabled) {
-      triggerButtonCLickSound()
+    if (isSoundEnabled) {
+      triggerButtonCLickSound();
     }
     console.log('On share clicked');
   };
@@ -154,7 +197,8 @@ const ResultScreen = ({navigation}) => {
             delay={500}
             style={styles.scoreText}>
             You scored {userGameData.score} out of{' '}
-            {(userGameData.wrongAnswers + userGameData.correctAnswers)  * scorePerQuestion}
+            {(userGameData.wrongAnswers + userGameData.correctAnswers) *
+              scorePerQuestion}
           </Animatable.Text>
 
           <Animatable.Text

@@ -38,7 +38,18 @@ const SettingsScreen = ({ navigation }) => {
   const userData = useSelector(state => state.auth);
   
   const styles = getStyles(currentTheme);
-  const { isSoundEnabled, isHapticEnabled, email, name } = userData;
+  const { isSoundEnabled, isHapticEnabled, email, fullName } = userData;
+
+  const truncateText = (text, limit) => {
+    return text.length > limit ? text.slice(0, limit) + '...' : text;
+  };
+  const truncateEmail = (email, limit) => {
+    const [localPart, domain] = email.split('@');
+    if (localPart.length > limit) {
+      return localPart.slice(0, limit) + '...' + '@' + domain;
+    }
+    return email;
+  };
 
   const toggleSound = () => {
     if(isHapticEnabled) {
@@ -128,9 +139,9 @@ const SettingsScreen = ({ navigation }) => {
         {/* Account Section */}
         <Animatable.View animation="fadeInDown" duration={600} style={styles.card}>
           <Text style={styles.sectionTitle}>Account</Text>
-          {renderRow(MaterialCommunityIcons, "email-outline", "Email", email)}
+          {renderRow(MaterialCommunityIcons, "email-outline", "Email", truncateEmail(email, 20))}
           <View style={styles.separator} />
-          {renderRow(FontAwesome, "user", "Username", name)}
+          {renderRow(FontAwesome, "user", "Username", truncateText(fullName, 30))}
           <View style={styles.separator} />
           {renderRow(AntDesign, "setting", "Game Pass", "Active")}
         </Animatable.View>

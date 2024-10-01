@@ -137,4 +137,21 @@ export const questionsData = [
   ]
   
   // Add more questions for different levels and games if needed...
+
+  export const gameNameAndGameId = {
+    Nature: "I7Bao7v5NbzEOkRThuHj",
+    GeneralKnowledge: "LiL68FPcwoAetmKQI8By",
+    Technology: "LwxMpt8xhoJ1x4o5fbyM",
+    CurrentAffairs: "P9rjW1tPYedka1S5m91F",
+    Programming: "VBpGtxNYwXTSzWRs5CoZ",
+    Health: "Y12B53HmwwLqInZIXwqO",
+    History: "ZmjxhlxIZd7Yj2rny82U",
+    Mythology: "caMpOFK6IxTyqyAxI62q",
+    Travel: "cml3F1MiXP37Sq2s1Wi2",
+    FilmyBooz: "hycbUXA4Aoum39wopHEq",
+    Music: "kW32F8EDwGkbBpArVN8q",
+    School: "vTCQi9ZMFHhF1SJl9Gbq",
+    Mathematics: "zmV8B5yrxZdI5NlK4sdU",
+    Sports: "zpFmiRnDawC25he12XAw",
+  }
   

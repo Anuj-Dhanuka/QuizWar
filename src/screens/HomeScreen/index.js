@@ -1,4 +1,4 @@
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -21,29 +21,59 @@ import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 // font utils
 import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 
-//common utils/common functions
+// common utils/common functions
 import {
+  getTokenAndUserId,
   triggerButtonCLickSound,
   triggerHapticFeedback,
 } from '../../utils/CommonUtils.js/commonFunctions';
 
-//redux
+import {useAuth} from '../../context/AuthContext';
+
+// redux
 import {
   resetAuth,
   resetPerformance,
   resetGame,
-  updateLastLoginDate,
-  incrementStreak,
-  resetStreak,
+  getGameCategories,
+  fetchUserProfile,
+  fetchUserPerformance,
 } from '../../store';
+
+// Loader component
+import Loader from '../../components/Loaders/Loader';
+import {Apiutils} from '../../utils/ApiUtils';
 
 const HomeScreen = ({navigation}) => {
   const dispatch = useDispatch();
+  const {user} = useAuth();
+
+  const [isLoading, setIsLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(null);
 
   const userPerformance = useSelector(state => state.userPerformance);
+  const gameCategoriesData = useSelector(state => state.gameCategories);
   const authData = useSelector(state => state.auth);
 
-  const {isHapticEnabled, isSoundEnabled} = authData;
+  const {userPerformanceIsLoading, userPerformanceError} = userPerformance;
+  const {
+    authDataIsLoading,
+    authDataError,
+    fullName,
+    isHapticEnabled,
+    isSoundEnabled,
+  } = authData;
+  const {isGameCategoriesLoading, gameCategoriesError} = gameCategoriesData;
+
+  // console.log("is loading: ", isLoading)
+  // console.log("isGameCategoriesLoading: ",isGameCategoriesLoading)
+  // console.log("authDataIsLoading: ", authDataIsLoading)
+  // console.log("userPerformanceIsLoading: ", userPerformanceIsLoading)
+
+  // console.log("fetchError: ", fetchError)
+  // console.log("gameCategoriesError: ", gameCategoriesError)
+  // console.log("authDataError: ", authDataError)
+  // console.log("userPerformanceError: ", userPerformanceError)
 
   // dispatch(resetAuth())
   // dispatch(resetPerformance())
@@ -55,24 +85,63 @@ const HomeScreen = ({navigation}) => {
   });
 
   useEffect(() => {
-    const today = moment().startOf('day');
+    const today = moment().startOf('day').format('YYYY-MM-DD');
+    const lastLoginRedux = userPerformance.lastLoginDate
+      ? moment(userPerformance.lastLoginDate)
+          .startOf('day')
+          .format('YYYY-MM-DD')
+      : null;
 
-    if (userPerformance.lastLoginDate) {
-      const lastLoginMoment = moment(userPerformance.lastLoginDate).startOf(
-        'day',
-      );
+    let updatedStreak = userPerformance.streak;
 
-      if (today.diff(lastLoginMoment, 'days') === 1) {
-        dispatch(incrementStreak());
-      } else if (today.diff(lastLoginMoment, 'days') > 1) {
-        dispatch(resetStreak());
+    if (lastLoginRedux !== today) {
+      if (lastLoginRedux) {
+        const lastLoginMoment = moment(userPerformance.lastLoginDate).startOf(
+          'day',
+        );
+
+        if (moment(today).diff(lastLoginMoment, 'days') === 1) {
+          updatedStreak = userPerformance.streak + 1;
+        } else if (moment(today).diff(lastLoginMoment, 'days') > 1) {
+          updatedStreak = 0;
+        }
+      } else {
+        updatedStreak = userPerformance.streak + 1;
       }
-    } else {
-      dispatch(incrementStreak());
+      const updatedUserPerformance = {
+        ...userPerformance,
+        userId: user.userId,
+        lastLoginDate: today,
+        streak: updatedStreak,
+      };
+      console.log(updatedUserPerformance);
+      updateUserPerformance(updatedUserPerformance);
     }
+    fetchRequiredData();
+  }, []);
 
-    dispatch(updateLastLoginDate(today.toISOString()));
-  }, [dispatch, userPerformance.lastLoginDate]);
+  const updateUserPerformance = async updatedUserPerformance => {
+    setIsLoading(true);
+    try {
+      await Apiutils.updateUserPerformance(user.userId, updatedUserPerformance);
+      console.log('updated');
+    } catch (error) {
+      setFetchError('Error updating user performance:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchRequiredData = async () => {
+    if (!fullName) {
+      console.log('entered in fetch user profile');
+      await dispatch(fetchUserProfile(user.userId));
+    }
+    console.log('entered in fetch user performance');
+    dispatch(fetchUserPerformance(user.userId));
+
+    dispatch(getGameCategories());
+  };
 
   const handleDefaultPlayNow = () => {
     if (isHapticEnabled) {
@@ -117,10 +186,22 @@ const HomeScreen = ({navigation}) => {
     },
   ];
 
+  const formatPoints = points => {
+    if (points >= 10000000) {
+      return (points / 10000000).toFixed(1) + 'Cr';
+    } else if (points >= 100000) {
+      return (points / 100000).toFixed(1) + 'L';
+    } else if (points >= 1000) {
+      return (points / 1000).toFixed(1) + 'K';
+    } else {
+      return points.toString();
+    }
+  };
+
   const renderStatItem = item => (
     <View style={styles.statContainer} key={item.id}>
       <Text style={styles.statLabel}>{item.label} - </Text>
-      <Text style={styles.statValue}>{item.value.toLocaleString()}</Text>
+      <Text style={styles.statValue}>{formatPoints(item.value)}</Text>
       <Icon
         name={item.iconName}
         size={normalize(18)}
@@ -173,56 +254,95 @@ const HomeScreen = ({navigation}) => {
   return (
     <SafeAreaView style={styles.flexContainer}>
       <LinearGradient colors={['#6a11cb', '#2575fc']} style={styles.container}>
+        {isGameCategoriesLoading ||
+        isLoading ||
+        userPerformanceIsLoading ||
+        authDataIsLoading ? (
+          <View style={styles.loaderContainer}>
+            <Loader isLoaderActive={true} />
+          </View>
+        ) : (
+          <>
+            {gameCategoriesError ||
+            fetchError ||
+            userPerformanceError ||
+            authDataError ? (
+              <View style={styles.errorContainer}>
+                {gameCategoriesError && (
+                  <Text style={styles.errorText}>{gameCategoriesError}</Text>
+                )}
+                {fetchError && (
+                  <Text style={styles.errorText}>{fetchError}</Text>
+                )}
+                {userPerformanceError && (
+                  <Text style={styles.errorText}>{userPerformanceError}</Text>
+                )}
+                {authDataError && (
+                  <Text style={styles.errorText}>{authDataError}</Text>
+                )}
+                <TouchableOpacity
+                  style={styles.retryButton}
+                  onPress={() => dispatch(getGameCategories())}>
+                  <Text style={styles.retryButtonText}>Retry</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <>
+                <View style={[styles.totalPointsContainer]}>
+                  <Text style={styles.statLabel}>Total points - </Text>
+                  <Text style={styles.statValue}>
+                    {formatPoints(userPerformance.totalPoints)}
+                  </Text>
+                  <Icon
+                    name={'star'}
+                    size={normalize(18)}
+                    color={'#ffd700'}
+                    style={styles.statIcon}
+                  />
+                </View>
 
-        <View style={[styles.totalPointsContainer]}>
-          <Text style={styles.statLabel}>Total points - </Text>
-          <Text style={styles.statValue}>
-            {userPerformance.totalPoints.toLocaleString()}
-          </Text>
-          <Icon
-            name={'star'}
-            size={normalize(18)}
-            color={'#ffd700'}
-            style={styles.statIcon}
-          />
-        </View>
+                <View style={styles.iqContainer}>
+                  <Text style={styles.iqText}>
+                    Level: {userPerformance.level}
+                  </Text>
+                </View>
 
-        <View style={styles.iqContainer}>
-          <Text style={styles.iqText}>Level: {userPerformance.level}</Text>
-        </View>
+                <View style={styles.statsContainer}>
+                  {userStats.map(renderStatItem)}
+                </View>
 
-        <View style={styles.statsContainer}>
-          {userStats.map(renderStatItem)}
-        </View>
+                <View style={styles.welcomeContentContainer}>
+                  <Text style={styles.welcomeText}>Welcome to Quiz War</Text>
+                  <Text style={styles.subHeroText}>
+                    Test your knowledge and win rewards!!!
+                  </Text>
+                  <Animatable.View
+                    animation="pulse"
+                    iterationCount="infinite"
+                    duration={1000}
+                    style={styles.floatingPlayButton}>
+                    <TouchableOpacity
+                      activeOpacity={0.8}
+                      onPress={handleDefaultPlayNow}>
+                      <Text style={styles.playNowText}>Play Now</Text>
+                    </TouchableOpacity>
+                  </Animatable.View>
+                </View>
 
-        <View style={styles.welcomeContentContainer}>
-          <Text style={styles.welcomeText}>Welcome to Quiz War</Text>
-          <Text style={styles.subHeroText}>
-            Test your knowledge and win rewards!!!
-          </Text>
-          <Animatable.View
-            animation="pulse"
-            iterationCount="infinite"
-            duration={1000}
-            style={styles.floatingPlayButton}>
-            <TouchableOpacity
-              activeOpacity={0.8}
-              onPress={handleDefaultPlayNow}>
-              <Text style={styles.playNowText}>Play Now</Text>
-            </TouchableOpacity>
-          </Animatable.View>
-        </View>
-
-        <View style={styles.tournaments}>
-          <Text style={styles.sectionTitle}>Featured Tournaments</Text>
-          <FlatList
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            data={tournaments}
-            renderItem={renderTournamentItem}
-            keyExtractor={item => item.id}
-          />
-        </View>
+                <View style={styles.tournaments}>
+                  <Text style={styles.sectionTitle}>Featured Tournaments</Text>
+                  <FlatList
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    data={tournaments}
+                    renderItem={renderTournamentItem}
+                    keyExtractor={item => item.id}
+                  />
+                </View>
+              </>
+            )}
+          </>
+        )}
       </LinearGradient>
     </SafeAreaView>
   );
@@ -237,6 +357,33 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: scaleVertical(8),
     paddingBottom: scaleVertical(36),
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  errorContainer: {
+    padding: normalize(20),
+    backgroundColor: '#ffdddd',
+    borderRadius: normalize(10),
+    margin: normalize(20),
+  },
+  errorText: {
+    color: '#d9534f',
+    textAlign: 'center',
+    marginBottom: scaleVertical(10),
+    fontWeight: 'bold',
+  },
+  retryButton: {
+    backgroundColor: '#d9534f',
+    paddingVertical: scaleVertical(10),
+    borderRadius: normalize(5),
+    alignItems: 'center',
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontWeight: 'bold',
   },
   statsContainer: {
     alignItems: 'flex-end',

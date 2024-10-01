@@ -1,7 +1,8 @@
-import {createSlice} from '@reduxjs/toolkit';
+import {createSlice, createAsyncThunk} from '@reduxjs/toolkit';
+import {Apiutils} from '../utils/ApiUtils';
 
-// Initial state for performance-related values
 const initialState = {
+  userId: null,
   streak: 0,
   quizzesCompleted: 0,
   totalPoints: 0,
@@ -10,13 +11,39 @@ const initialState = {
   leastTimeTakenByUser: null,
   lastLoginDate: null,
   level: 1,
+  userPerformanceIsLoading: null,
+  userPerformanceError: null,
 };
 
-// Create the performance slice
+export const fetchUserPerformance = createAsyncThunk(
+  'userPerformance/fetchUserPerformance',
+  async (userId, {rejectWithValue}) => {
+    try {
+      const userPerformanceData = await Apiutils.fetchUserPerformance(userId);
+      console.log('user performance fetched successfully');
+      return userPerformanceData;
+    } catch (error) {
+      console.log('user performance error: ', error);
+      return rejectWithValue(error.message);
+    }
+  },
+);
+
 const userPerformanceSlice = createSlice({
   name: 'userPerformance',
   initialState,
   reducers: {
+    loginUserPerformance: (state, action) => {
+      state.userId = action.payload.userId;
+      state.streak = action.payload.streak;
+      state.quizzesCompleted = action.payload.quizzesCompleted;
+      state.totalPoints = action.payload.totalPoints;
+      state.monthlyPoints = action.payload.monthlyPoints;
+      state.highestScore = action.payload.highestScore;
+      state.leastTimeTakenByUser = action.payload.leastTimeTakenByUser;
+      state.lastLoginDate = action.payload.lastLoginDate;
+      state.level = action.payload.level;
+    },
     updatePerformanceState: (state, action) => {
       const {streak, quizzesCompleted, monthlyPoints, totalPoints, level} =
         action.payload;
@@ -29,13 +56,13 @@ const userPerformanceSlice = createSlice({
       if (level !== undefined) state.level = level;
     },
     updateHighestScore: (state, action) => {
-        state.highestScore = action.payload.highestScore,
-        state.leastTimeTakenByUser = action.payload.leastTimeTakenByUser
+      (state.highestScore = action.payload.highestScore),
+        (state.leastTimeTakenByUser = action.payload.leastTimeTakenByUser);
     },
-    incrementStreak: (state) => {
+    incrementStreak: state => {
       state.streak += 1;
     },
-    resetStreak: (state) => {
+    resetStreak: state => {
       state.streak = 0;
     },
     updateLastLoginDate: (state, action) => {
@@ -43,9 +70,42 @@ const userPerformanceSlice = createSlice({
     },
     resetPerformance: () => initialState,
   },
+  extraReducers: builder => {
+    builder
+      .addCase(fetchUserPerformance.pending, state => {
+        state.userPerformanceIsLoading = true;
+        state.userPerformanceError = null;
+      })
+      .addCase(fetchUserPerformance.fulfilled, (state, action) => {
+        state.userPerformanceIsLoading = false;
+        state.userPerformanceError = null;
+        if (action.payload) {
+          state.userId = action.payload.userId;
+          state.streak = action.payload.streak;
+          state.quizzesCompleted = action.payload.quizzesCompleted;
+          state.totalPoints = action.payload.totalPoints;
+          state.monthlyPoints = action.payload.monthlyPoints;
+          state.highestScore = action.payload.highestScore;
+          state.leastTimeTakenByUser = action.payload.leastTimeTakenByUser;
+          state.lastLoginDate = action.payload.lastLoginDate;
+          state.level = action.payload.level;
+        }
+      })
+      .addCase(fetchUserPerformance.rejected, (state, action) => {
+        state.userPerformanceIsLoading = false;
+        state.userPerformanceError =
+          action.payload || 'Failed to fetch user performance data';
+      });
+  },
 });
 
-// Export actions and reducer
-export const {updatePerformanceState, updateHighestScore, incrementStreak, resetStreak, updateLastLoginDate,  resetPerformance} =
-  userPerformanceSlice.actions;
+export const {
+  loginUserPerformance,
+  updatePerformanceState,
+  updateHighestScore,
+  incrementStreak,
+  resetStreak,
+  updateLastLoginDate,
+  resetPerformance,
+} = userPerformanceSlice.actions;
 export default userPerformanceSlice.reducer;

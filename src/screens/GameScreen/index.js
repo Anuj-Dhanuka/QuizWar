@@ -18,7 +18,10 @@ import BackgroundTimer from 'react-native-background-timer';
 import {useTheme} from '../../context/ThemeContext';
 
 //redux
-import {updateGameState} from '../../store/gameSlice';
+import {
+  updateGameState,
+  updateScoreUpdateRequired,
+} from '../../store/gameSlice';
 
 //dimension Utils
 import {normalize, scaleVertical} from '../../utils/DimensionUtils';
@@ -153,7 +156,7 @@ const GameScreen = ({navigation}) => {
           wrongAnswers: wrongAnswers,
           createdTime: moment().format('YYYY-MM-DD HH:mm:ss'),
           userId: userData.userId,
-          username: userData.name,
+          username: userData.fullName,
           phoneNumber: userData.phoneNumber,
           userEmail: userData.email,
           categoryId: activeSessionSData.activeCategoryId,
@@ -178,6 +181,7 @@ const GameScreen = ({navigation}) => {
         score === userPerformance.highestScore &&
         timeTakenInFloat < leastTimeTakenByUser
       ) {
+        dispatch(updateScoreUpdateRequired({isUpdateScoreRequired: true}));
         dispatch(
           updateHighestScore({
             highestScore: score,
@@ -187,6 +191,7 @@ const GameScreen = ({navigation}) => {
       }
 
       if (score > userPerformance.highestScore) {
+        dispatch(updateScoreUpdateRequired({isUpdateScoreRequired: true}));
         dispatch(
           updateHighestScore({
             highestScore: score,
@@ -239,7 +244,10 @@ const GameScreen = ({navigation}) => {
       setQuestionCount(prev => prev + 1);
       setProgress(0);
       progressRef.current?.reAnimate();
-      setCheckAns({id: null, ans: false});
+  
+      // Reset answer states
+      setCheckAns({ id: null, ans: false });
+      setIsDisabled(false);  // Enable buttons again
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -254,6 +262,7 @@ const GameScreen = ({navigation}) => {
       ]).start();
     });
   };
+  
 
   const changingQuestion = () => {
     setIsDisabled(false);
@@ -270,43 +279,47 @@ const GameScreen = ({navigation}) => {
   };
 
   const answerClickHandler = id => {
-    if (isHapticEnabled) {
-      triggerHapticFeedback();
+  // Prevent clicks if already disabled
+  if (isDisabled) {
+    return;
+  }
+
+  // Immediately disable further clicks
+  setIsDisabled(true);
+
+  if (isHapticEnabled) {
+    triggerHapticFeedback();
+  }
+
+  let updatedScore = score;
+  const correct_option = (questionsData[questionCount]?.correct_option + 1).toString();
+
+  if (correct_option === id) {
+    if (isSoundEnabled) {
+      triggerButtonCLickSound('correctoption.mp3');
     }
-    //clearInterval(timer);
-    if (isDisabled === false) {
-      let updatedScore = score;
-      setIsDisabled(true);
 
-      const correct_option = (
-        questionsData[questionCount]?.correct_option + 1
-      ).toString();
-
-      if (correct_option === id) {
-        if (isSoundEnabled) {
-          triggerButtonCLickSound('correctoption.mp3');
-        }
-        setCheckAns({id: id, ans: true, correctAns: correct_option});
-        setScore(prevScore => {
-          return prevScore + scorePerQuestion;
-        });
-        updatedScore = updatedScore + scorePerQuestion;
-        setCurrentPoints(prevCount => ({
-          count: prevCount.count + 1,
-          addScore: 95 / numberOfQuestion,
-        }));
-        changingQuestion();
-      } else {
-        if (isSoundEnabled) {
-          triggerButtonCLickSound('wrongoption.mp3');
-        }
-        changingQuestion();
-        setCheckAns({id: id, ans: false, correctAns: correct_option});
-      }
+    // Correct answer
+    setCheckAns({ id: id, ans: true, correctAns: correct_option });
+    setScore(prevScore => prevScore + scorePerQuestion);
+    updatedScore = updatedScore + scorePerQuestion;
+    // Handle question change
+    changingQuestion();
+  } else {
+    if (isSoundEnabled) {
+      triggerButtonCLickSound('wrongoption.mp3');
     }
-  };
 
-  const debouncedHandleAnswerClick = debounce(answerClickHandler, 500);
+    // Wrong answer
+    setCheckAns({ id: id, ans: false, correctAns: correct_option });
+
+    // Handle question change
+    changingQuestion();
+  }
+};
+
+
+  const debouncedHandleAnswerClick = debounce(answerClickHandler, 1000);
 
   const progressRef = useRef(null);
   const styles = getStyles(currentTheme);
