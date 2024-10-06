@@ -7,6 +7,7 @@ import {
   StatusBar,
   TouchableOpacity,
   FlatList,
+  NativeModules,
 } from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
 import LinearGradient from 'react-native-linear-gradient';
@@ -47,6 +48,7 @@ import {Apiutils} from '../../utils/ApiUtils';
 const HomeScreen = ({navigation}) => {
   const dispatch = useDispatch();
   const {user} = useAuth();
+  const { MyNativeModule } = NativeModules;
 
   const [isLoading, setIsLoading] = useState(false);
   const [fetchError, setFetchError] = useState(null);
@@ -85,6 +87,9 @@ const HomeScreen = ({navigation}) => {
   });
 
   useEffect(() => {
+    MyNativeModule.sayHello('John')
+      .then(greeting => console.log(greeting))
+      .catch(error => console.error(error));
     const today = moment().startOf('day').format('YYYY-MM-DD');
     const lastLoginRedux = userPerformance.lastLoginDate
       ? moment(userPerformance.lastLoginDate)
