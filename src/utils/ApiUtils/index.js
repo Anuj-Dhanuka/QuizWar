@@ -73,6 +73,27 @@ export class Apiutils {
     }
   }
 
+  static async fetchAllUsersPerformance() {
+    try {
+      const performanceCollection = await firestore().collection('Userperformance').get();
+      
+      if (!performanceCollection.empty) {
+        const allUsersPerformance = performanceCollection.docs.map(doc => ({
+          userId: doc.id,
+          ...doc.data(),
+        }));
+  
+        return allUsersPerformance;
+      } else {
+        throw new Error('No performance data found');
+      }
+    } catch (error) {
+      console.error("Error fetching all users' performance:", error);
+      throw error;
+    }
+  }
+  
+
   static async uploadImageToFirebase(imagePath, userId) {
     const fileName = `profilePictures/${userId}_${Date.now()}`;
     const reference = storage().ref(fileName);

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -15,6 +15,9 @@ import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 import * as Animatable from 'react-native-animatable';
 
 import {maxScoreOfGame} from '../../utils/CommonUtils.js/constants';
+
+//utils //api utils
+import { Apiutils } from '../../utils/ApiUtils';
 
 // Dummy profile pictures
 const profilePictures = {
@@ -41,6 +44,15 @@ const loggedInUser = {
 };
 
 const DashboardScreen = () => {
+
+  const fetchUserPerformanceData = async() => {
+    const userPerformanceData = await Apiutils.fetchAllUsersPerformance()
+    console.log(userPerformanceData)
+  }
+
+  useEffect(() => {
+    fetchUserPerformanceData()
+  }, [])
   
   useFocusEffect(() => {
     StatusBar.setBackgroundColor('#e1f5fe');
