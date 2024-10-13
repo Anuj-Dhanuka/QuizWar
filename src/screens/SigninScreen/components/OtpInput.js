@@ -56,14 +56,7 @@ const OtpInput = ({isLoading, confirmCode, handleResendCode}) => {
         CONFIRM CODE
       </Button>
 
-      <Pressable
-        onPress={handleRetry}
-        disabled={isResendDisabled}
-        style={styles.resendButton}>
-        <Text style={styles.resendButtonText}>
-          {isResendDisabled ? `Resend OTP in (${timer}s)` : 'Resend OTP'}
-        </Text>
-      </Pressable>
+      
     </View>
   );
 };
@@ -97,13 +90,6 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     ...getInterFont('Medium'),
-  },
-  resendButton: {
-    alignSelf: 'center',
-  },
-  resendButtonText: {
-    ...getInterFont('Medium'),
-    textDecorationLine: 'underline',
   },
 });
 

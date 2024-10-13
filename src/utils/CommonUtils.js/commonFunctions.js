@@ -27,7 +27,6 @@ export const getTokenAndUserId = async () => {
     if (token !== null && userId !== null) {
       return { token, userId };
     } else {
-      Toast.show('No token or userId found in AsyncStorage', Toast.LONG);
       return null;
     }
   } catch (e) {

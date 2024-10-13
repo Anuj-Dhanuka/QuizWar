@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, {useEffect, useState} from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   StatusBar,
   FlatList,
+  RefreshControl,
   Image,
 } from 'react-native';
 import {useFocusEffect} from '@react-navigation/native';
@@ -14,214 +15,64 @@ import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 import * as Animatable from 'react-native-animatable';
 
+//Utils //Common Utils
 import {maxScoreOfGame} from '../../utils/CommonUtils.js/constants';
 
-//utils //api utils
-import { Apiutils } from '../../utils/ApiUtils';
+//Utils //Api Utils
+import {Apiutils} from '../../utils/ApiUtils';
 
-// Dummy profile pictures
-const profilePictures = {
-  1: 'https://randomuser.me/api/portraits/men/1.jpg',
-  2: 'https://randomuser.me/api/portraits/women/2.jpg',
-  3: 'https://randomuser.me/api/portraits/men/3.jpg',
-  4: 'https://randomuser.me/api/portraits/women/4.jpg',
-  5: 'https://randomuser.me/api/portraits/men/5.jpg',
-  6: 'https://randomuser.me/api/portraits/women/6.jpg',
-  7: 'https://randomuser.me/api/portraits/men/7.jpg',
-  8: 'https://randomuser.me/api/portraits/women/8.jpg',
-  9: 'https://randomuser.me/api/portraits/men/9.jpg',
-  10: 'https://randomuser.me/api/portraits/women/10.jpg',
-};
-
-// Logged-in user data (this could be dynamic based on authentication)
-const loggedInUser = {
-  id: '7',
-  rank: 7,
-  username: 'TriviaChamp',
-  score: 45, // Capped value
-  monthlyPoints: 8500,
-  time: '6m 0s',
-};
+//Context
+import {useAuth} from '../../context/AuthContext';
 
 const DashboardScreen = () => {
+  const {user} = useAuth();
 
-  const fetchUserPerformanceData = async() => {
-    const userPerformanceData = await Apiutils.fetchAllUsersPerformance()
-    console.log(userPerformanceData)
-  }
+  const [allUserPerformance, setAllUserPerformance] = useState([]);
+  const [loggedInUserPerformance, setLoggedInUserPerformance] = useState(null);
+  const [loggedInUserRank, setLoggedInUserRank] = useState(0);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  useEffect(() => {
-    fetchUserPerformanceData()
-  }, [])
-  
-  useFocusEffect(() => {
-    StatusBar.setBackgroundColor('#e1f5fe');
-    StatusBar.setBarStyle('dark-content');
-  });
+  const fetchUserPerformanceData = async () => {
+    try {
+      const allUsers = await Apiutils.fetchAllUsersPerformance();
+      const loggedInUser = allUsers.find(u => u.userId === user.userId);
 
-  const userData = [
-    {
-      id: '1',
-      rank: 1,
-      username: 'QuizMaster',
-      score: 75,
-      monthlyPoints: 12000,
-      time: '3m 50s',
-    },
-    {
-      id: '2',
-      rank: 2,
-      username: 'Brainiac',
-      score: 70,
-      monthlyPoints: 11500,
-      time: '4m 10s',
-    },
-    {
-      id: '3',
-      rank: 3,
-      username: 'SmartyPants',
-      score: 65,
-      monthlyPoints: 11000,
-      time: '4m 20s',
-    },
-    {
-      id: '4',
-      rank: 4,
-      username: 'QuizNinja',
-      score: 60,
-      monthlyPoints: 10500,
-      time: '5m 0s',
-    },
-    {
-      id: '5',
-      rank: 5,
-      username: 'KnowledgeKing',
-      score: 55,
-      monthlyPoints: 10000,
-      time: '5m 15s',
-    },
-    {
-      id: '6',
-      rank: 6,
-      username: 'MasterMind',
-      score: 50,
-      monthlyPoints: 9500,
-      time: '5m 30s',
-    },
-    {
-      id: '7',
-      rank: 7,
-      username: 'TriviaChamp',
-      score: 45,
-      monthlyPoints: 8500,
-      time: '6m 0s',
-    }, // Logged in user
-    {
-      id: '8',
-      rank: 8,
-      username: 'BrainWarrior',
-      score: 40,
-      monthlyPoints: 8000,
-      time: '6m 20s',
-    },
-    {
-      id: '9',
-      rank: 9,
-      username: 'QuizPro',
-      score: 35,
-      monthlyPoints: 7500,
-      time: '6m 40s',
-    },
-    {
-      id: '10',
-      rank: 10,
-      username: 'GeniusGuru',
-      score: 30,
-      monthlyPoints: 7000,
-      time: '7m 0s',
-    },
-  ];
+      const sortedUsers = allUsers.sort((a, b) => {
+        if (a.highestScore !== b.highestScore)
+          return b.highestScore - a.highestScore;
+        if (a.leastTimeTakenByUser !== b.leastTimeTakenByUser)
+          return a.leastTimeTakenByUser - b.leastTimeTakenByUser;
+        if (a.monthlyPoints !== b.monthlyPoints)
+          return b.monthlyPoints - a.monthlyPoints;
+        return b.totalPoints - a.totalPoints;
+      });
 
-  const renderUserItem = ({item}) => {
-    const isTop3 = item.rank <= 3;
-    const isCurrentUser = item.id === loggedInUser.id;
-    const profilePic = profilePictures[item.rank] || profilePictures[1];
+      const userRank = sortedUsers.findIndex(u => u.userId === user.userId) + 1;
 
-    return (
-      <Animatable.View
-        animation="fadeInUp"
-        delay={item.rank * 100}
-        style={[
-          styles.userCard,
-          isTop3 && {
-            borderColor: '#FFD700',
-            backgroundColor: '#fff8e1',
-            borderWidth: 2,
-          },
-          isCurrentUser && {
-            backgroundColor: '#cceeff',
-            borderWidth: 2,
-            borderColor: '#00bfff',
-          },
-        ]}>
-        <View style={styles.rankContainer}>
-          <Text style={[styles.rankText, isTop3 && styles.topRankText]}>
-            #{item.rank}
-          </Text>
-          <Icon
-            name="crown"
-            size={normalize(24)}
-            color={isTop3 ? '#FFD700' : '#bbb'}
-            style={styles.crownIcon}
-          />
-        </View>
+      console.log(sortedUsers);
 
-        <Image
-          source={{uri: profilePic}}
-          style={[
-            styles.profilePic,
-            {borderColor: isCurrentUser ? '#00bfff' : '#ccc'},
-          ]}
-        />
-
-        <View style={styles.userInfo}>
-          <Text style={styles.username}>{item.username}</Text>
-          <View style={styles.detailsContainer}>
-            <View style={styles.scoreTimeContainer}>
-              <Icon name="star" size={normalize(16)} color="#FFD700" />
-              <Text style={styles.scoreText}>
-                {item.score}/{maxScoreOfGame}
-              </Text>
-              <Icon
-                name="calendar-month"
-                size={normalize(16)}
-                color="#ff5722"
-              />
-              <Text style={styles.monthlyPointsText}>
-                {item.monthlyPoints.toLocaleString()} pts
-              </Text>
-            </View>
-            <View style={styles.timeContainer}>
-              <Icon name="clock-outline" size={normalize(16)} color="#32cd32" />
-              <Text style={styles.timeText}>{item.time}</Text>
-            </View>
-          </View>
-
-          <Animatable.View
-            animation="fadeIn"
-            duration={1000}
-            style={styles.progressBar}>
-            <View
-              style={[
-                styles.progressFill,
-                {width: `${(item.score / 75) * 100}%`},
-              ]}
-            />
-          </Animatable.View>
-        </View>
-      </Animatable.View>
-    );
+      setAllUserPerformance(sortedUsers);
+      setLoggedInUserPerformance(loggedInUser);
+      setLoggedInUserRank(userRank);
+    } catch (error) {
+      console.error('Error fetching performance data:', error);
+    }
   };
+
+  const onRefresh = async () => {
+    setIsRefreshing(true); // Show refreshing spinner
+    await fetchUserPerformanceData();
+    setIsRefreshing(false); // Hide refreshing spinner
+  };
+
+  useFocusEffect(
+    React.useCallback(() => {
+      fetchUserPerformanceData();
+
+      StatusBar.setBackgroundColor('#e1f5fe');
+      StatusBar.setBarStyle('dark-content');
+    }, []),
+  );
 
   const renderLoggedInUserCard = () => (
     <Animatable.View
@@ -231,7 +82,7 @@ const DashboardScreen = () => {
         {backgroundColor: '#cceeff', borderWidth: 2, borderColor: '#00bfff'},
       ]}>
       <View style={styles.rankContainer}>
-        <Text style={[styles.rankText]}>#{loggedInUser.rank}</Text>
+        <Text style={[styles.rankText]}>#{loggedInUserRank}</Text>
         <Icon
           name="account"
           size={normalize(24)}
@@ -241,26 +92,34 @@ const DashboardScreen = () => {
       </View>
 
       <Image
-        source={{uri: profilePictures[loggedInUser.rank]}}
+        source={
+          loggedInUserPerformance?.profilePicture
+            ? {uri: loggedInUserPerformance?.profilePicture}
+            : require('../../assets/images/default_profile.png')
+        }
         style={[styles.profilePic, {borderColor: '#00bfff'}]}
       />
 
       <View style={styles.userInfo}>
-        <Text style={styles.username}>{loggedInUser.username}</Text>
+        <Text style={styles.username}>
+          {loggedInUserPerformance?.userName || 'Guest'}
+        </Text>
         <View style={styles.detailsContainer}>
           <View style={styles.scoreTimeContainer}>
             <Icon name="star" size={normalize(16)} color="#FFD700" />
             <Text style={styles.scoreText}>
-              {loggedInUser.score}/{maxScoreOfGame}
+              {loggedInUserPerformance?.highestScore}/{maxScoreOfGame}
             </Text>
             <Icon name="calendar-month" size={normalize(16)} color="#ff5722" />
             <Text style={styles.monthlyPointsText}>
-              {loggedInUser.monthlyPoints.toLocaleString()} pts
+              {loggedInUserPerformance?.monthlyPoints.toLocaleString()} pts
             </Text>
           </View>
           <View style={styles.timeContainer}>
             <Icon name="clock-outline" size={normalize(16)} color="#32cd32" />
-            <Text style={styles.timeText}>{loggedInUser.time}</Text>
+            <Text style={styles.timeText}>
+              {loggedInUserPerformance?.leastTimeTakenByUser || 0}
+            </Text>
           </View>
         </View>
 
@@ -271,7 +130,7 @@ const DashboardScreen = () => {
           <View
             style={[
               styles.progressFill,
-              {width: `${(loggedInUser.score / 75) * 100}%`},
+              {width: `${(loggedInUserPerformance?.highestScore / 75) * 100}%`},
             ]}
           />
         </Animatable.View>
@@ -279,21 +138,107 @@ const DashboardScreen = () => {
     </Animatable.View>
   );
 
-  const dataWithLoggedInUser = [
-    {...loggedInUser, id: 'loggedInUser'},
-    ...userData,
-  ]; // Include logged-in user at the top
+  const renderUserItem = ({item, index}) => {
+    const isTop3 = index <= 3;
+    const isCurrentUser = item?.userId === user?.userId;
+
+    return (
+      <>
+        <Animatable.View
+          animation="fadeInUp"
+          delay={index * 100}
+          style={[
+            styles.userCard,
+            isTop3 && {
+              borderColor: '#FFD700',
+              backgroundColor: '#fff8e1',
+              borderWidth: 2,
+            },
+            isCurrentUser && {
+              backgroundColor: '#cceeff',
+              borderWidth: 2,
+              borderColor: '#00bfff',
+            },
+          ]}>
+          <View style={styles.rankContainer}>
+            <Text style={[styles.rankText, isTop3 && styles.topRankText]}>
+              #{index}
+            </Text>
+            <Icon
+              name="crown"
+              size={normalize(24)}
+              color={isTop3 ? '#FFD700' : '#bbb'}
+              style={styles.crownIcon}
+            />
+          </View>
+
+          <Image
+            source={
+              loggedInUserPerformance?.profilePicture
+                ? {uri: item?.profilePicture}
+                : require('../../assets/images/default_profile.png')
+            }
+            style={[styles.profilePic, {borderColor: '#00bfff'}]}
+          />
+
+          <View style={styles.userInfo}>
+            <Text style={styles.username}>{item?.userName || 'Guest'}</Text>
+            <View style={styles.detailsContainer}>
+              <View style={styles.scoreTimeContainer}>
+                <Icon name="star" size={normalize(16)} color="#FFD700" />
+                <Text style={styles?.scoreText}>
+                  {item.highestScore}/{maxScoreOfGame}
+                </Text>
+                <Icon
+                  name="calendar-month"
+                  size={normalize(16)}
+                  color="#ff5722"
+                />
+                <Text style={styles.monthlyPointsText}>
+                  {item?.monthlyPoints.toLocaleString()} pts
+                </Text>
+              </View>
+              <View style={styles.timeContainer}>
+                <Icon
+                  name="clock-outline"
+                  size={normalize(16)}
+                  color="#32cd32"
+                />
+                <Text style={styles.timeText}>
+                  {item.leastTimeTakenByUser || 0}
+                </Text>
+              </View>
+            </View>
+
+            <Animatable.View
+              animation="fadeIn"
+              duration={1000}
+              style={styles.progressBar}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {width: `${(item?.highestScore / 75) * 100}%`},
+                ]}
+              />
+            </Animatable.View>
+          </View>
+        </Animatable.View>
+      </>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.flexContainer}>
       <StatusBar backgroundColor="#e1f5fe" barStyle={'dark-content'} />
       <Text style={styles.title}>Leaderboard</Text>
+      {renderLoggedInUserCard()}
       <FlatList
-        data={dataWithLoggedInUser}
-        renderItem={({item, index}) =>
-          index === 0 ? renderLoggedInUserCard() : renderUserItem({item})
+        data={allUserPerformance}
+        renderItem={({item, index}) => renderUserItem({item, index})}
+        keyExtractor={item => item.userId}
+        refreshControl={
+          <RefreshControl refreshing={isRefreshing} onRefresh={onRefresh} />
         }
-        keyExtractor={item => item.id}
       />
     </SafeAreaView>
   );

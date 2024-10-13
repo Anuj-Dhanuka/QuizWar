@@ -2,23 +2,25 @@ import React, {useEffect, useState, useRef, useCallback} from 'react';
 import {
   View,
   Text,
+  TouchableOpacity,
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   StatusBar,
   Image,
+  Pressable,
 } from 'react-native';
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import {useFocusEffect} from '@react-navigation/native';
 import auth from '@react-native-firebase/auth';
 import firestore from '@react-native-firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import {parsePhoneNumberFromString} from 'libphonenumber-js';
 import Toast from 'react-native-simple-toast';
 
 //context
 import {useTheme} from '../../context/ThemeContext';
-import { useAuth } from '../../context/AuthContext';
+import {useAuth} from '../../context/AuthContext';
 
 //dimension utils
 import {normalize, scaleVertical} from '../../utils/DimensionUtils';
@@ -27,19 +29,19 @@ import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 
 //common utils //common functions
-import { storeTokenAndUserId } from '../../utils/CommonUtils.js/commonFunctions';
+import {storeTokenAndUserId} from '../../utils/CommonUtils.js/commonFunctions';
 
 //local components
 import Input from './components/Input';
 import OtpInput from './components/OtpInput';
 import Routes from '../../Navigations/RoutesConstants';
-import { useDispatch } from 'react-redux';
-import { storeUserIdAndTokenInRedux } from '../../store';
+import {useDispatch} from 'react-redux';
+import {storeUserIdAndTokenInRedux} from '../../store';
 
 function SigninScreen({navigation}) {
-  const dispatch = useDispatch()
+  const dispatch = useDispatch();
   const {currentTheme} = useTheme();
-  const { storeUserIdandTokenInContext } = useAuth();
+  const {storeUserIdandTokenInContext} = useAuth();
   const confirmRef = useRef(null);
 
   const [phonenumber, setPhonenumber] = useState('');
@@ -54,7 +56,7 @@ function SigninScreen({navigation}) {
     useCallback(() => {
       const statusBarBackgroundColor = '#FFFFFF';
       const statusBarStyle = 'dark-content';
-      
+
       if (Platform.OS === 'android' && statusBarBackgroundColor) {
         StatusBar.setBackgroundColor(statusBarBackgroundColor);
       }
@@ -64,17 +66,8 @@ function SigninScreen({navigation}) {
       return () => {
         StatusBar.setBarStyle('default');
       };
-    }, [currentTheme])
+    }, [currentTheme]),
   );
-
-  const clearAll = async () => {
-    try {
-      await AsyncStorage.clear();
-      console.log('All data cleared');
-    } catch (error) {
-      console.error('Error clearing AsyncStorage:', error);
-    }
-  };
 
   useEffect(() => {
     if (isResendDisabled) {
@@ -109,7 +102,7 @@ function SigninScreen({navigation}) {
       setIsOtpScreenEnabled(true);
       setPhonenumber(phonenumber);
       setIsResendDisabled(true);
-      setTimer(30);
+      setTimer(60);
     } catch (error) {
       Toast.show(`Please retry, ${error}`, Toast.LONG);
     } finally {
@@ -134,8 +127,8 @@ function SigninScreen({navigation}) {
 
       if (userDocument.exists) {
         await storeTokenAndUserId(idToken, userId);
-        await storeUserIdandTokenInContext(userId, idToken)
-        dispatch(storeUserIdAndTokenInRedux({token: idToken , userId: userId}))
+        await storeUserIdandTokenInContext(userId, idToken);
+        dispatch(storeUserIdAndTokenInRedux({token: idToken, userId: userId}));
       } else {
         navigation.navigate(Routes.REGISTRATION, {
           idToken,
@@ -152,10 +145,25 @@ function SigninScreen({navigation}) {
   };
 
   const handleResendCode = async () => {
-    confirmRef.current = null;
-    setPhonenumber('');
+    setIsLoading(true);
+    try {
+      const confirmation = await auth().signInWithPhoneNumber(phonenumber);
+      confirmRef.current = confirmation;
+      setIsOtpScreenEnabled(true);
+      setPhonenumber(phonenumber);
+      setIsResendDisabled(true);
+      setTimer(60);
+    } catch (error) {
+      Toast.show(`Please retry, ${error}`, Toast.LONG);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleEditNumber = () => {
     setIsOtpScreenEnabled(false);
     setIsResendDisabled(false);
+    confirmRef.current = null;
   };
 
   return (
@@ -177,13 +185,35 @@ function SigninScreen({navigation}) {
           </Text>
 
           {isOtpScreenEnable ? (
-            <OtpInput
-              isResendDisabled={isResendDisabled}
-              timer={timer}
-              isLoading={isLoading}
-              confirmCode={confirmCode}
-              handleResendCode={handleResendCode}
-            />
+            <View>
+              <OtpInput
+                isResendDisabled={isResendDisabled}
+                timer={timer}
+                isLoading={isLoading}
+                confirmCode={confirmCode}
+                handleResendCode={handleResendCode}
+              />
+
+              <Pressable
+                onPress={handleResendCode}
+                disabled={isResendDisabled}
+                style={styles.resendButton}>
+                <Text style={styles.resendButtonText}>
+                  {isResendDisabled
+                    ? `Resend OTP in (${timer}s)`
+                    : 'Resend OTP'}
+                </Text>
+              </Pressable>
+
+              <Pressable
+                style={styles.editNumberButton}
+                onPress={handleEditNumber}>
+                <View style={styles.editNumberContainer}>
+                  <Text style={styles.editNumberText}>Edit Phone Number</Text>
+                  <Icon name="edit" size={20} color="#007bff" />
+                </View>
+              </Pressable>
+            </View>
           ) : (
             <Input
               isLoading={isLoading}
@@ -227,5 +257,28 @@ const getStyles = currentTheme =>
       color: '#0a1e18',
       marginBottom: scaleVertical(40),
       ...getInterFont('Medium'),
+    },
+
+    resendButton: {
+      alignSelf: 'center',
+    },
+    resendButtonText: {
+      ...getInterFont('Medium'),
+      textDecorationLine: 'underline',
+    },
+    editNumberButton: {
+      marginTop: scaleVertical(20),
+      alignItems: 'center',
+    },
+    editNumberContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    editNumberText: {
+      fontSize: normalize(16),
+      color: '#007bff',
+      textDecorationLine: 'underline',
+      marginRight: normalize(5),
+      marginLeft: normalize(32),
     },
   });

@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, Linking, Pressable, SafeAreaView, StatusBar, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Linking, Pressable, SafeAreaView, StatusBar, ScrollView, Alert } from 'react-native';
 import { useFocusEffect } from '@react-navigation/native';
 import Toast from 'react-native-simple-toast';
 import * as Animatable from 'react-native-animatable';
 import { useDispatch, useSelector } from 'react-redux'; // Added useDispatch, useSelector
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Icons
 import MaterialIcons from 'react-native-vector-icons/MaterialIcons';
@@ -15,6 +16,7 @@ import FontAwesome from "react-native-vector-icons/FontAwesome";
 
 // Context
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 // Dimension utils
 import { normalize, scaleVertical } from '../../utils/DimensionUtils';
@@ -29,11 +31,13 @@ import { triggerButtonCLickSound, triggerHapticFeedback } from '../../utils/Comm
 import BackButton from '../../components/Buttons/BackButton';
 
 // Redux actions
-import { editProfile } from '../../store/authSlice';
+import { editProfile, resetAuth } from '../../store/authSlice';
+import { removeUserIdAndTokenFromRedux, resetPerformance } from '../../store';
 
 const SettingsScreen = ({ navigation }) => {
   const dispatch = useDispatch();
   const { currentTheme } = useTheme();
+  const {removeUserIdandTokenFromContext} = useAuth()
 
   const userData = useSelector(state => state.auth);
   
@@ -41,15 +45,18 @@ const SettingsScreen = ({ navigation }) => {
   const { isSoundEnabled, isHapticEnabled, email, fullName } = userData;
 
   const truncateText = (text, limit) => {
+    if(!text) return '';
     return text.length > limit ? text.slice(0, limit) + '...' : text;
   };
   const truncateEmail = (email, limit) => {
+    if (!email) return ''; // Fallback if email is null or undefined
     const [localPart, domain] = email.split('@');
     if (localPart.length > limit) {
       return localPart.slice(0, limit) + '...' + '@' + domain;
     }
     return email;
   };
+  
 
   const toggleSound = () => {
     if(isHapticEnabled) {
@@ -96,6 +103,40 @@ const SettingsScreen = ({ navigation }) => {
     } else {
       Toast.show(`Unable to open URL: ${url}`, Toast.LONG);
     }
+  };
+
+  const clearAll = async () => {
+    try {
+      await AsyncStorage.clear();
+      console.log('All data cleared');
+    } catch (error) {
+      console.error('Error clearing AsyncStorage:', error);
+    }
+  };
+
+  const handleLogout = async() => {
+    if(isHapticEnabled) {
+      triggerHapticFeedback()
+    }
+    if(isSoundEnabled) {
+      triggerButtonCLickSound()
+    }
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "OK", onPress: async() => {
+            clearAll()
+            dispatch(removeUserIdAndTokenFromRedux())
+            await removeUserIdandTokenFromContext()
+            dispatch(resetAuth())
+            dispatch(resetPerformance())
+            Toast.show('Logged out successful!', Toast.LONG);
+          }
+        }
+      ]
+    );
   };
 
   const renderRow = (IconComponent, iconName, label, value, onPress) => (
@@ -175,6 +216,12 @@ const SettingsScreen = ({ navigation }) => {
           {renderRow(Ionicons, "lock-closed-outline", "Privacy Policy")}
           <View style={styles.separator} />
           {renderRow(Feather, "x", "Follow us on X")}
+        </Animatable.View>
+
+        <Animatable.View animation="fadeInUp" delay={400} duration={600} style={styles.card}>
+          <Pressable onPress={handleLogout} style={styles.logoutButton}>
+            <Text style={styles.logoutButtonText}>Logout</Text>
+          </Pressable>
         </Animatable.View>
       </ScrollView>
     </SafeAreaView>
@@ -269,6 +316,18 @@ const getStyles = theme =>
       textShadowColor: 'rgba(0, 0, 0, 0.2)',
       textShadowOffset: { width: 1, height: 2 },
       textShadowRadius: 3,
+    },
+    logoutButton: {
+      backgroundColor: '#FF4D4D', // Red color for logout
+      paddingVertical: scaleVertical(12),
+      borderRadius: normalize(8),
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    logoutButtonText: {
+      fontSize: normalize(18),
+      color: '#FFFFFF',
+      fontWeight: 'bold',
     },
   });
 

@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
     } catch (e) {
       console.log("Failed to fetch userToken and userId from AsyncStorage context", e);
     } finally {
-      setLoading(false); // Mark loading as complete
+      setLoading(false);
     }
   };
 

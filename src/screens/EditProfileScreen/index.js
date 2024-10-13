@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useRef, useState} from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,17 @@ import {
   SafeAreaView,
   StatusBar,
   Image,
-  ActivityIndicator
+  ActivityIndicator,
+  KeyboardAvoidingView,
+  ScrollView,
 } from 'react-native';
 import {useSelector, useDispatch} from 'react-redux';
 import {useFocusEffect} from '@react-navigation/native';
 import DateTimePicker from '@react-native-community/datetimepicker';
+import FontAwesome5 from 'react-native-vector-icons/FontAwesome5';
+import {Picker} from '@react-native-picker/picker';
 import ImageCropPicker from 'react-native-image-crop-picker';
-import Icon from 'react-native-vector-icons/MaterialIcons'; // React Native Vector Icons for the edit icon
+import Icon from 'react-native-vector-icons/MaterialIcons';
 import moment from 'moment';
 
 //context
@@ -29,17 +33,34 @@ import {getInterFont} from '../../utils/FontUtils/interFontHelper';
 //dimension utils
 import {normalize, scaleVertical} from '../../utils/DimensionUtils';
 
+//common utils
+import {countryCodes} from '../../utils/CommonUtils.js/countryCodes';
+
 //global component
 import BackButton from '../../components/Buttons/BackButton';
+import Button from '../../components/Buttons/Button';
 import {
   triggerButtonCLickSound,
   triggerHapticFeedback,
 } from '../../utils/CommonUtils.js/commonFunctions';
 import {Apiutils} from '../../utils/ApiUtils';
 
+// Reusable constants
+const INPUT_HEIGHT = normalize(54);
+const INPUT_HORIZONTAL_PADDING = normalize(10);
+const BORDER_RADIUS = normalize(12);
+const PROFILE_IMAGE_SIZE = normalize(120);
+const ICON_SIZE = normalize(24);
+const BACKGROUND_COLOR = '#F1F3F6';
+const BUTTON_COLOR = '#00BFFF';
+const LABEL_FONT_SIZE = normalize(16);
+const FONT_SIZE = normalize(15);
+
 const EditProfileScreen = ({navigation}) => {
   const dispatch = useDispatch();
   const {user} = useAuth();
+
+  const pickerRef = useRef();
 
   const userData = useSelector(state => state.auth);
 
@@ -48,14 +69,17 @@ const EditProfileScreen = ({navigation}) => {
   const [updatedData, setUpdatedData] = useState(userData);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [loading, setLoading] = useState(false);
-
+  const [selectedCountryCode, setSelectedCountryCode] = useState(
+    updatedData.country,
+  );
 
   useFocusEffect(() => {
-    StatusBar.setBackgroundColor('#FFFFFF');
+    StatusBar.setBackgroundColor(BACKGROUND_COLOR);
     StatusBar.setBarStyle('dark-content');
   });
 
   const handleSave = async () => {
+    setLoading(true);
     if (isHapticEnabled) {
       triggerHapticFeedback();
     }
@@ -68,6 +92,8 @@ const EditProfileScreen = ({navigation}) => {
       navigation.goBack();
     } catch (error) {
       console.error('Failed to update user profile', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -80,115 +106,146 @@ const EditProfileScreen = ({navigation}) => {
     });
   };
 
-  const openImagePicker = async() => {
-    setLoading(true); // Set loading to true when image fetch starts
+  const openImagePicker = async () => {
+    setLoading(true);
     ImageCropPicker.openPicker({
       width: 300,
       height: 300,
       cropping: true,
     })
-      .then( async image => {
-        const imageUrl = await Apiutils.uploadImageToFirebase(image.path, user.userId);
+      .then(async image => {
+        const imageUrl = await Apiutils.uploadImageToFirebase(
+          image.path,
+          user.userId,
+        );
         setUpdatedData({...updatedData, profilePicture: imageUrl});
-        setLoading(false); // Set loading to false after image fetch completes
+        setLoading(false);
       })
       .catch(error => {
-        setLoading(false); // Set loading to false after image fetch completes
+        setLoading(false);
         console.log('Image selection cancelled', error);
       });
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.backButtonContainer}>
-        <BackButton color="#000" />
-      </View>
-
-      {/* Profile Picture Section */}
-      <View style={styles.profilePictureContainer}>
-        <TouchableOpacity
-          onPress={openImagePicker}
-          style={styles.profilePictureButton}>
-          {loading ? ( // Show loader if image is loading
-          <View style={styles.imageLoadingView}>
-            <ActivityIndicator size="large" color="#00BFFF" />
+      <KeyboardAvoidingView>
+        <ScrollView>
+          <View style={styles.backButtonContainer}>
+            <BackButton color="#000" />
           </View>
-            
-          ) : updatedData.profilePicture ? (
-            <Image
-              source={{uri: updatedData.profilePicture}}
-              style={styles.profileImage}
-            />
-          ) : (
-            <Icon
-              name="account-circle"
-              size={normalize(120)}
-              color="#ccc"
-              style={styles.profileImagePlaceholder}
-            />
-          )}
-          <View style={styles.editIconContainer}>
-            <Icon name="edit" size={normalize(24)} color="#FFF" />
+          <View style={styles.profilePictureContainer}>
+            <TouchableOpacity
+              onPress={openImagePicker}
+              style={styles.profilePictureButton}>
+              {loading ? (
+                <View style={styles.imageLoadingView}>
+                  <ActivityIndicator size="large" color={BUTTON_COLOR} />
+                </View>
+              ) : updatedData.profilePicture ? (
+                <Image
+                  source={{uri: updatedData.profilePicture}}
+                  style={styles.profileImage}
+                />
+              ) : (
+                <Icon
+                  name="account-circle"
+                  size={PROFILE_IMAGE_SIZE}
+                  color="#ccc"
+                  style={styles.profileImagePlaceholder}
+                />
+              )}
+              <View style={styles.editIconContainer}>
+                <Icon name="edit" size={ICON_SIZE} color="#FFF" />
+              </View>
+            </TouchableOpacity>
           </View>
-        </TouchableOpacity>
-      </View>
 
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Name:</Text>
-        <TextInput
-          style={styles.input}
-          value={updatedData.fullName}
-          onChangeText={text =>
-            setUpdatedData({...updatedData, fullName: text})
-          }
-        />
-      </View>
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Email:</Text>
-        <TextInput
-          style={styles.input}
-          value={updatedData.email}
-          onChangeText={text => setUpdatedData({...updatedData, email: text})}
-        />
-      </View>
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Date of Birth:</Text>
-        <TouchableOpacity onPress={() => setDatePickerVisible(true)}>
-          <TextInput
-            style={styles.input}
-            value={moment(updatedData.dateOfBirth).format('ll')}
-            editable={false}
-          />
-        </TouchableOpacity>
-        {datePickerVisible && (
-          <DateTimePicker
-            value={new Date(updatedData.dateOfBirth)}
-            mode="date"
-            display="default"
-            onChange={handleDateChange}
-          />
-        )}
-      </View>
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>Country:</Text>
-        <TextInput
-          style={styles.input}
-          value={updatedData.country}
-          onChangeText={text => setUpdatedData({...updatedData, country: text})}
-        />
-      </View>
-      <View style={styles.inputGroup}>
-        <Text style={styles.label}>City:</Text>
-        <TextInput
-          style={styles.input}
-          value={updatedData.city}
-          onChangeText={text => setUpdatedData({...updatedData, city: text})}
-        />
-      </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Name:</Text>
+            <TextInput
+              style={styles.input}
+              value={updatedData.fullName}
+              onChangeText={text =>
+                setUpdatedData({...updatedData, fullName: text})
+              }
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Email:</Text>
+            <TextInput
+              style={styles.input}
+              value={updatedData.email}
+              onChangeText={text =>
+                setUpdatedData({...updatedData, email: text})
+              }
+            />
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Date of Birth:</Text>
+            <TouchableOpacity
+              style={styles.datePickerButton}
+              onPress={() => setDatePickerVisible(true)}>
+              <Text style={styles.datePickerText}>
+                {moment(updatedData.dateOfBirth).format('ll')}
+              </Text>
+              <FontAwesome5
+                name="calendar-alt"
+                size={normalize(16)}
+                color="#6a5acd"
+              />
+            </TouchableOpacity>
+            {datePickerVisible && (
+              <DateTimePicker
+                value={new Date(updatedData.dateOfBirth)}
+                mode="date"
+                display="default"
+                onChange={handleDateChange}
+              />
+            )}
+          </View>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>Country:</Text>
+            <View style={styles.countryCodeContainer}>
+              <Picker
+                ref={pickerRef}
+                selectedValue={selectedCountryCode}
+                style={styles.picker}
+                onValueChange={text => {
+                  setSelectedCountryCode(text);
+                  setUpdatedData({...updatedData, country: text});
+                }}>
+                {countryCodes.map(country => (
+                  <Picker.Item
+                    key={country.id}
+                    label={country.country}
+                    value={country.country}
+                  />
+                ))}
+              </Picker>
+            </View>
+          </View>
 
-      <TouchableOpacity style={styles.animatedButton} onPress={handleSave}>
-        <Text style={styles.buttonText}>Save</Text>
-      </TouchableOpacity>
+          <View style={styles.inputGroup}>
+            <Text style={styles.label}>City:</Text>
+            <TextInput
+              style={styles.input}
+              value={updatedData.city}
+              onChangeText={text =>
+                setUpdatedData({...updatedData, city: text})
+              }
+            />
+          </View>
+
+          <Button
+            onPress={handleSave}
+            textStyle={styles.buttonText}
+            loading={loading}
+            buttonStyle={styles.animatedButton}>
+            Update
+          </Button>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 };
@@ -197,20 +254,20 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     paddingHorizontal: normalize(20),
-    backgroundColor: '#FFFFFF',
+    backgroundColor: BACKGROUND_COLOR,
   },
   backButtonContainer: {
     marginBottom: scaleVertical(16),
   },
   imageLoadingView: {
-    width: normalize(120),
-    height: normalize(120),
-    borderRadius: normalize(60),
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "#FFFFFF",
+    width: PROFILE_IMAGE_SIZE,
+    height: PROFILE_IMAGE_SIZE,
+    borderRadius: PROFILE_IMAGE_SIZE / 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
     borderWidth: 2,
-    borderColor: "#000000"
+    borderColor: '#000000',
   },
   profilePictureContainer: {
     alignItems: 'center',
@@ -223,49 +280,79 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   profileImage: {
-    width: normalize(120),
-    height: normalize(120),
-    borderRadius: normalize(60), // Makes the image circular
+    width: PROFILE_IMAGE_SIZE,
+    height: PROFILE_IMAGE_SIZE,
+    borderRadius: PROFILE_IMAGE_SIZE / 2,
   },
   profileImagePlaceholder: {
-    width: normalize(120),
-    height: normalize(120),
-    borderRadius: normalize(60), // Circular placeholder
+    width: PROFILE_IMAGE_SIZE,
+    height: PROFILE_IMAGE_SIZE,
+    borderRadius: PROFILE_IMAGE_SIZE / 2,
   },
   editIconContainer: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#00BFFF',
-    borderRadius: normalize(16),
+    backgroundColor: BUTTON_COLOR,
+    borderRadius: BORDER_RADIUS / 2,
     padding: normalize(4),
   },
   inputGroup: {
     marginBottom: scaleVertical(15),
   },
   label: {
-    fontSize: normalize(16),
+    fontSize: LABEL_FONT_SIZE,
     marginBottom: scaleVertical(5),
     ...getInterFont('Medium'),
+  },
+  datePickerButton: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    color: '#333',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: INPUT_HORIZONTAL_PADDING,
+    height: INPUT_HEIGHT,
+    borderRadius: BORDER_RADIUS,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  datePickerText: {
+    fontSize: FONT_SIZE,
+    color: '#333',
+  },
+  countryCodeContainer: {
+    borderWidth: 1,
+    borderColor: '#ccc',
+    borderRadius: BORDER_RADIUS,
+    backgroundColor: '#FFFFFF',
+    height: INPUT_HEIGHT,
+    justifyContent: 'center',
+  },
+  picker: {
+    height: INPUT_HEIGHT,
+    color: '#333',
   },
   input: {
     borderWidth: 1,
     borderColor: '#ccc',
-    padding: normalize(10),
-    borderRadius: normalize(8),
-    fontSize: normalize(16),
-    ...getInterFont('Regular'),
-  },
-  animatedButton: {
-    backgroundColor: '#00BFFF',
-    paddingVertical: normalize(12),
-    borderRadius: normalize(8),
-    alignItems: 'center',
+    backgroundColor: '#FFFFFF',
+    borderRadius: BORDER_RADIUS,
+    paddingHorizontal: INPUT_HORIZONTAL_PADDING,
+    height: INPUT_HEIGHT,
+    fontSize: FONT_SIZE,
   },
   buttonText: {
-    fontSize: normalize(18),
+    fontSize: LABEL_FONT_SIZE,
     color: '#FFF',
     ...getInterFont('Bold'),
+  },
+  animatedButton: {
+    backgroundColor: BUTTON_COLOR,
+    paddingVertical: scaleVertical(8),
+    borderRadius: BORDER_RADIUS,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
 

@@ -169,6 +169,8 @@ const GameScreen = ({navigation}) => {
       dispatch(
         updatePerformanceState({
           ...userPerformance,
+          userId: userData.userId,
+          userName: userData.fullName,
           quizzesCompleted: userPerformance.quizzesCompleted + 1,
           totalPoints: userPerformance.totalPoints + pointsEarned,
           monthlyPoints: userPerformance.monthlyPoints + pointsEarned,
@@ -244,10 +246,10 @@ const GameScreen = ({navigation}) => {
       setQuestionCount(prev => prev + 1);
       setProgress(0);
       progressRef.current?.reAnimate();
-  
+
       // Reset answer states
-      setCheckAns({ id: null, ans: false });
-      setIsDisabled(false);  // Enable buttons again
+      setCheckAns({id: null, ans: false});
+      setIsDisabled(false); // Enable buttons again
       Animated.parallel([
         Animated.timing(fadeAnim, {
           toValue: 1,
@@ -262,7 +264,6 @@ const GameScreen = ({navigation}) => {
       ]).start();
     });
   };
-  
 
   const changingQuestion = () => {
     setIsDisabled(false);
@@ -279,47 +280,52 @@ const GameScreen = ({navigation}) => {
   };
 
   const answerClickHandler = id => {
-  // Prevent clicks if already disabled
-  if (isDisabled) {
-    return;
-  }
-
-  // Immediately disable further clicks
-  setIsDisabled(true);
-
-  if (isHapticEnabled) {
-    triggerHapticFeedback();
-  }
-
-  let updatedScore = score;
-  const correct_option = (questionsData[questionCount]?.correct_option + 1).toString();
-
-  if (correct_option === id) {
-    if (isSoundEnabled) {
-      triggerButtonCLickSound('correctoption.mp3');
+    // Prevent clicks if already disabled
+    if (isDisabled) {
+      return;
     }
 
-    // Correct answer
-    setCheckAns({ id: id, ans: true, correctAns: correct_option });
-    setScore(prevScore => prevScore + scorePerQuestion);
-    updatedScore = updatedScore + scorePerQuestion;
-    // Handle question change
-    changingQuestion();
-  } else {
-    if (isSoundEnabled) {
-      triggerButtonCLickSound('wrongoption.mp3');
+    // Immediately disable further clicks
+    setIsDisabled(true);
+
+    if (isHapticEnabled) {
+      triggerHapticFeedback();
     }
 
-    // Wrong answer
-    setCheckAns({ id: id, ans: false, correctAns: correct_option });
+    let updatedScore = score;
+    const correct_option = (
+      questionsData[questionCount]?.correct_option + 1
+    ).toString();
 
-    // Handle question change
-    changingQuestion();
-  }
-};
+    if (correct_option === id) {
+      if (isSoundEnabled) {
+        triggerButtonCLickSound('correctoption.mp3');
+      }
 
+      // Correct answer
+      setCheckAns({id: id, ans: true, correctAns: correct_option});
+      setScore(prevScore => prevScore + scorePerQuestion);
+      updatedScore = updatedScore + scorePerQuestion;
+      setCurrentPoints(prevCount => ({
+        count: prevCount.count + 1,
+        addScore: 95 / numberOfQuestion,
+      }));
+      // Handle question change
+      changingQuestion();
+    } else {
+      if (isSoundEnabled) {
+        triggerButtonCLickSound('wrongoption.mp3');
+      }
 
-  const debouncedHandleAnswerClick = debounce(answerClickHandler, 1000);
+      // Wrong answer
+      setCheckAns({id: id, ans: false, correctAns: correct_option});
+
+      // Handle question change
+      changingQuestion();
+    }
+  };
+
+  const debouncedHandleAnswerClick = debounce(answerClickHandler, 100);
 
   const progressRef = useRef(null);
   const styles = getStyles(currentTheme);

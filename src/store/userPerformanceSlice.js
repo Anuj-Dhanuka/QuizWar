@@ -3,6 +3,8 @@ import {Apiutils} from '../utils/ApiUtils';
 
 const initialState = {
   userId: null,
+  userName: null,
+  profilePicture: null,
   streak: 0,
   quizzesCompleted: 0,
   totalPoints: 0,
@@ -35,6 +37,7 @@ const userPerformanceSlice = createSlice({
   reducers: {
     loginUserPerformance: (state, action) => {
       state.userId = action.payload.userId;
+      state.userName = action.payload.userName;
       state.streak = action.payload.streak;
       state.quizzesCompleted = action.payload.quizzesCompleted;
       state.totalPoints = action.payload.totalPoints;
@@ -81,6 +84,7 @@ const userPerformanceSlice = createSlice({
         state.userPerformanceError = null;
         if (action.payload) {
           state.userId = action.payload.userId;
+          state.userName = action.payload.userName;
           state.streak = action.payload.streak;
           state.quizzesCompleted = action.payload.quizzesCompleted;
           state.totalPoints = action.payload.totalPoints;

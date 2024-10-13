@@ -32,7 +32,9 @@ import {
   resetAuth,
   resetPerformance,
   resetGame,
+  storeUserIdAndTokenInRedux,
 } from '../store';
+import { getTokenAndUserId } from '../utils/CommonUtils.js/commonFunctions';
 
 const Stack = createStackNavigator();
 
@@ -40,25 +42,17 @@ const Navigations = () => {
   const dispatch = useDispatch();
   const {user, loading} = useAuth();
 
-  const clearAll = async () => {
-    try {
-      await AsyncStorage.clear();
-      console.log('All data cleared');
-    } catch (error) {
-      console.error('Error clearing AsyncStorage:', error);
-    }
-  };
-
   useEffect(() => {
-    // clearAll()
-    // dispatch(resetAuth());
-    // dispatch(resetPerformance());
-    // dispatch(resetGame());
+    const getUserDetails = async() => {
+      const userDetails = await getTokenAndUserId()
+      const {token, userId} = userDetails
+      dispatch(storeUserIdAndTokenInRedux(token, userId))
+    }
+    getUserDetails()
     dispatch(fetchFromAsyncStorage());
-  });
+  }, []);
 
   if (loading) {
-    // Show loading screen while checking authentication status
     return (
       <>
       <StatusBar backgroundColor={"#6a11cb"} barStyle={"light-content"} />
