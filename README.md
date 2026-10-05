@@ -1,79 +1,177 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# QuizWar
 
-# Getting Started
+QuizWar is an independent React Native quiz application with phone-number
+authentication, category-based gameplay, timed questions, performance tracking,
+leaderboards, profiles, and Firebase-backed data.
 
->**Note**: Make sure you have completed the [React Native - Environment Setup](https://reactnative.dev/docs/environment-setup) instructions till "Creating a new application" step, before proceeding.
+[View the QuizWar engineering case study](https://anujdhanuka.com/projects/quizwar)
 
-## Step 1: Start the Metro Server
+## Features
 
-First, you will need to start **Metro**, the JavaScript _bundler_ that ships _with_ React Native.
+- Phone-number authentication with OTP verification
+- User registration and profile management
+- Firebase-backed quiz categories
+- Timed multiple-choice gameplay with immediate answer feedback
+- Score, accuracy, completion time, and performance tracking
+- Player rankings and leaderboard views
+- Profile image selection and upload
+- Configurable sound and haptic feedback
 
-To start Metro, run the following command from the _root_ of your React Native project:
+## Tech Stack
+
+- **Mobile:** React Native 0.75, React 18, JavaScript
+- **State:** Redux Toolkit, React Redux, Redux Persist, AsyncStorage
+- **Navigation:** React Navigation with stack and bottom-tab navigators
+- **Backend services:** Firebase Authentication, Cloud Firestore, Firebase Storage
+- **Mobile UX:** Gesture Handler, Reanimated, Lottie, haptic feedback, and sound
+
+## Architecture
+
+The application composes its global providers at the root and switches its
+navigation tree according to authentication state.
+
+```text
+App
+├── Redux Provider
+├── PersistGate
+├── AuthProvider
+├── ThemeProvider
+└── GestureHandlerRootView
+    └── NavigationContainer
+        └── Navigations
+```
+
+```text
+Signed out
+├── Sign In
+└── Registration
+
+Signed in
+├── Bottom tabs
+│   ├── Home
+│   ├── Dashboard
+│   └── Profile
+└── Stack flows
+    ├── Categories
+    ├── Game
+    ├── Result
+    ├── Settings
+    └── Edit Profile
+```
+
+## State Management
+
+Redux Toolkit organizes state into `auth`, `userPerformance`, `activeSession`,
+`game`, `gameCategories`, and `authToken` domains. Redux Persist stores only the
+`auth` and `userPerformance` domains in AsyncStorage; the remainder is rebuilt
+for each application session.
+
+## Firebase Integration
+
+- **Firebase Authentication** handles phone-number and OTP authentication.
+- **Cloud Firestore** stores user profiles, quiz categories, scores, and player
+  performance data.
+- **Firebase Storage** stores uploaded profile media.
+
+The checked-in Android `google-services.json` is Firebase mobile client
+configuration, not an administrator credential. A clone intended for use with a
+different backend must replace it with configuration from its own Firebase
+project. The repository does not include Firestore or Storage rules; access
+control must be configured and reviewed in the Firebase console.
+
+The iOS project does not include a `GoogleService-Info.plist`. Add the client
+configuration generated for your own iOS app target before running Firebase
+features on iOS. Do not commit service-account JSON, private keys, or signing
+credentials.
+
+## Quiz Flow
+
+```text
+Sign in → choose a category → start a quiz → answer timed questions
+        → calculate score and performance → view results and dashboard
+```
+
+## Project Structure
+
+```text
+src/
+├── assets/       # Images, fonts, icons, and animation data
+├── components/   # Shared interface components
+├── context/      # Authentication and theme providers
+├── Navigations/  # Auth-aware stack and bottom-tab navigation
+├── screens/      # Application screens and screen-specific components
+├── store/        # Redux store, slices, and persistence configuration
+└── utils/        # Firebase data access and shared utilities
+```
+
+Native Android and iOS projects live in `android/` and `ios/` respectively.
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js 18 or newer
+- A configured [React Native development environment](https://reactnative.dev/docs/set-up-your-environment)
+- Android Studio and an Android SDK for Android development
+- macOS, Xcode, and CocoaPods for iOS development
+- A Firebase project with phone authentication, Firestore, and Storage configured
+
+### Install
 
 ```bash
-# using npm
+git clone https://github.com/Anuj-Dhanuka/QuizWar.git
+cd QuizWar
+npm ci
+```
+
+For iOS, install the native pods after installing JavaScript dependencies:
+
+```bash
+cd ios
+pod install
+cd ..
+```
+
+### Run
+
+Start Metro in one terminal:
+
+```bash
 npm start
-
-# OR using Yarn
-yarn start
 ```
 
-## Step 2: Start your Application
-
-Let Metro Bundler run in its _own_ terminal. Open a _new_ terminal from the _root_ of your React Native project. Run the following command to start your _Android_ or _iOS_ app:
-
-### For Android
+Then launch a configured simulator or emulator from another terminal:
 
 ```bash
-# using npm
 npm run android
-
-# OR using Yarn
-yarn android
-```
-
-### For iOS
-
-```bash
-# using npm
+# or, on macOS
 npm run ios
-
-# OR using Yarn
-yarn ios
 ```
 
-If everything is set up _correctly_, you should see your new app running in your _Android Emulator_ or _iOS Simulator_ shortly provided you have set up your emulator/simulator correctly.
+Before exercising Firebase features, register the app identifiers in your own
+Firebase project, add the corresponding native client configuration, enable
+phone authentication, and deploy restrictive Firestore and Storage rules.
 
-This is one way to run your app — you can also run it directly from within Android Studio and Xcode respectively.
+## Project Scope
 
-## Step 3: Modifying your App
+QuizWar is an independent mobile engineering project built to explore complete
+React Native application flows: authentication, quiz mechanics, persisted state,
+Firebase-backed user data, performance tracking, and native mobile interactions.
+It is not presented as a commercial production service.
 
-Now that you have successfully run the app, let's modify it.
+## Engineering Case Study
 
-1. Open `App.tsx` in your text editor of choice and edit some lines.
-2. For **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Developer Menu** (<kbd>Ctrl</kbd> + <kbd>M</kbd> (on Window and Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (on macOS)) to see your changes!
+For a detailed breakdown of the architecture, engineering decisions, and
+source-backed implementation evidence, see the
+[QuizWar case study](https://anujdhanuka.com/projects/quizwar).
 
-   For **iOS**: Hit <kbd>Cmd ⌘</kbd> + <kbd>R</kbd> in your iOS Simulator to reload the app and see your changes!
+## Security
 
-## Congratulations! :tada:
+Please report suspected vulnerabilities privately. See
+[SECURITY.md](SECURITY.md) for the disclosure guidance and current project scope.
 
-You've successfully run and modified your React Native App. :partying_face:
+## Author
 
-### Now what?
+**Anuj Dhanuka** — Software Engineer · React Native & Frontend Developer
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [Introduction to React Native](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you can't get this to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+[Portfolio](https://anujdhanuka.com)
